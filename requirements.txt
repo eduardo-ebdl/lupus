@@ -1,0 +1,22 @@
+# Core — framework de agentes e LLM
+deepagents>=0.4.12
+pyyaml>=6.0
+langchain>=1.2.8
+langchain-google-genai>=4.2.1
+langgraph>=1.0.7
+langgraph-checkpoint-sqlite>=3.0.0
+python-dotenv>=1.2.1
+rich>=14.0.0
+
+# RAG — busca semântica híbrida (FAISS + BM25 + CrossEncoder)
+sentence-transformers>=5.0.0
+faiss-cpu>=1.7.4
+rank-bm25>=0.2.2
+numpy>=2.0.0
+
+# Leitura de arquivos de dados (read_data_file)
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# Observabilidade (opcional — ativa LangSmith tracing via variáveis de ambiente)
+langsmith>=0.6.0

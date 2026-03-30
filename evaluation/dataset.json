@@ -1,0 +1,177 @@
+[
+  {
+    "id": 1,
+    "category": "arquitetura",
+    "question": "Qual e o padrao arquitetural principal do projeto SRAG?",
+    "expected_keywords": ["medallion", "bronze", "silver", "gold"],
+    "expected_tools": ["get_srag_architecture"]
+  },
+  {
+    "id": 2,
+    "category": "arquitetura",
+    "question": "Quantas camadas tem a Medallion Architecture e quais sao?",
+    "expected_keywords": [["3", "tres", "três", "three"], "bronze", "silver", "gold"],
+    "expected_tools": ["get_srag_architecture"]
+  },
+  {
+    "id": 3,
+    "category": "arquitetura",
+    "question": "Qual a plataforma usada pelo projeto SRAG e qual o sistema de governanca?",
+    "expected_keywords": ["databricks", "unity catalog"],
+    "expected_tools": ["get_srag_architecture"]
+  },
+  {
+    "id": 4,
+    "category": "arquitetura",
+    "question": "Quais sao os 3 modulos do projeto SRAG e qual a responsabilidade de cada um?",
+    "expected_keywords": ["srag_agent", "ai_agent", "pipeline"],
+    "expected_tools": ["get_srag_architecture"]
+  },
+  {
+    "id": 5,
+    "category": "arquitetura",
+    "question": "Qual a fonte de dados do projeto SRAG?",
+    "expected_keywords": ["opendatasus", "sivep"],
+    "expected_tools": ["get_srag_architecture"]
+  },
+  {
+    "id": 6,
+    "category": "modulos",
+    "question": "O que faz o modelo silver_srag_data.sql? Quais transformacoes ele aplica?",
+    "expected_keywords": ["limpeza", "normalizacao", "flag", "obito", "comorbidade"],
+    "expected_tools": ["analyze_dbt_model"]
+  },
+  {
+    "id": 7,
+    "category": "modulos",
+    "question": "Quais KPIs sao calculados na tabela gold_srag_daily?",
+    "expected_keywords": ["mortalidade", "uti", "vacinacao", "growth", "casos"],
+    "expected_tools": ["get_data_dictionary", "analyze_dbt_model"]
+  },
+  {
+    "id": 8,
+    "category": "modulos",
+    "question": "Qual o schedule do pipeline de ingestao e com que frequencia ele roda?",
+    "expected_keywords": ["16", "mensal", "meio-dia", "cron"],
+    "expected_tools": ["analyze_pipeline_config"]
+  },
+  {
+    "id": 9,
+    "category": "modulos",
+    "question": "Quais sao as tasks do pipeline de ingestao e o que cada uma faz?",
+    "expected_keywords": ["extract", "load", "csv", "scrape", "delta"],
+    "expected_tools": ["analyze_pipeline_config"]
+  },
+  {
+    "id": 10,
+    "category": "modulos",
+    "question": "Qual modelo LLM o ai_agent usa e onde ele esta hospedado?",
+    "expected_keywords": ["llama", "3.3", "70b", "databricks"],
+    "expected_tools": ["get_agent_tools_spec", "get_srag_architecture"]
+  },
+  {
+    "id": 11,
+    "category": "integracao",
+    "question": "Como a coluna 'evolucao' do Bronze se transforma em 'obito_srag_flag' na Silver?",
+    "expected_keywords": ["evolucao", "obito_srag_flag", "mapeamento", "flag", "2"],
+    "expected_tools": ["get_data_dictionary", "map_data_lineage"]
+  },
+  {
+    "id": 12,
+    "category": "integracao",
+    "question": "De quais tabelas o ai_agent puxa dados para gerar relatorios?",
+    "expected_keywords": ["gold", "daily", "monthly"],
+    "expected_tools": ["get_agent_tools_spec", "get_srag_architecture"]
+  },
+  {
+    "id": 13,
+    "category": "integracao",
+    "question": "Como os dados fluem desde o OpenDataSUS ate a camada Gold Daily?",
+    "expected_keywords": ["opendatasus", "raw", "bronze", "silver", "gold"],
+    "expected_tools": ["map_data_lineage", "analyze_pipeline_config"]
+  },
+  {
+    "id": 14,
+    "category": "integracao",
+    "question": "Quais colunas da Silver alimentam o calculo de taxa_mortalidade_perc na Gold?",
+    "expected_keywords": ["obito_srag_flag", "total_obitos", "total_casos"],
+    "expected_tools": ["get_data_dictionary", "map_data_lineage"]
+  },
+  {
+    "id": 15,
+    "category": "integracao",
+    "question": "Qual a relacao entre a Gold Daily e a Gold Monthly? Uma depende da outra?",
+    "expected_keywords": ["monthly", "daily", ["agregacao", "agrega", "sumariza", "consolida", "acumula"], ["mensal", "mes", "month"], "ref"],
+    "expected_tools": ["map_data_lineage", "analyze_dbt_model"]
+  },
+  {
+    "id": 16,
+    "category": "design",
+    "question": "Por que a camada Bronze e materializada como ephemeral ao inves de table?",
+    "expected_keywords": ["ephemeral", "cte", "storage", "nao persiste"],
+    "expected_tools": ["review_architecture"]
+  },
+  {
+    "id": 17,
+    "category": "design",
+    "question": "O que e liquid clustering e por que foi escolhido para a Silver?",
+    "expected_keywords": ["liquid clustering", "dt_sin_pri", "uf", "particionamento", "otimizacao"],
+    "expected_tools": ["review_architecture"]
+  },
+  {
+    "id": 18,
+    "category": "design",
+    "question": "Quais guardrails o ai_agent usa para evitar respostas incorretas?",
+    "expected_keywords": ["guardrail", "prompt", "quality gate", "mortalidade", "negativo"],
+    "expected_tools": ["get_agent_tools_spec"]
+  },
+  {
+    "id": 19,
+    "category": "design",
+    "question": "Como o projeto garante conformidade com a LGPD?",
+    "expected_keywords": ["lgpd", "pii", "remocao", "silver"],
+    "expected_tools": ["get_srag_architecture", "analyze_dbt_model"]
+  },
+  {
+    "id": 20,
+    "category": "design",
+    "question": "Qual a vantagem de usar DABs (Databricks Asset Bundles) para orquestracao ao inves de Airflow?",
+    "expected_keywords": ["dabs", "infrastructure", "code", "databricks", "deploy"],
+    "expected_tools": ["review_architecture"]
+  },
+  {
+    "id": 21,
+    "category": "rag",
+    "question": "Como a idade e normalizada ou calculada no codigo SQL do projeto SRAG?",
+    "expected_keywords": ["idade", "normaliz", "calculo", "anos", "nasc"],
+    "expected_tools": ["search_codebase"]
+  },
+  {
+    "id": 22,
+    "category": "rag",
+    "question": "Onde e como obito_srag_flag e criada no codigo SQL?",
+    "expected_keywords": ["obito_srag_flag", "evolucao", "case", "when", "silver"],
+    "expected_tools": ["search_codebase"]
+  },
+  {
+    "id": 23,
+    "category": "rag",
+    "question": "Como o liquid clustering e configurado no SQL da Silver?",
+    "expected_keywords": ["liquid clustering", "cluster", "dt_sin_pri", "uf"],
+    "expected_tools": ["search_codebase"]
+  },
+  {
+    "id": 24,
+    "category": "rag",
+    "question": "Como o growth rate e calculado no codigo SQL da Gold?",
+    "expected_keywords": ["growth", "rate", "lag", "casos", "percentual"],
+    "expected_tools": ["search_codebase"]
+  },
+  {
+    "id": 25,
+    "category": "rag",
+    "question": "Quais guardrails ou validacoes estao implementados no notebook do ai_agent?",
+    "expected_keywords": ["guardrail", "validac", "qualidade", "negativo", "mortalidade"],
+    "expected_tools": ["get_agent_tools_spec"]
+  }
+]

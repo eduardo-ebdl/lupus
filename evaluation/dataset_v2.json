@@ -1,0 +1,177 @@
+[
+  {
+    "id": "v2_01",
+    "question": "Quais tecnologias esse repositório usa?",
+    "expected_keywords": ["dbt", "python", "databricks", "tecnologia", "stack"],
+    "expected_tools": ["discover_project"],
+    "category": "discovery"
+  },
+  {
+    "id": "v2_02",
+    "question": "Me mostra a estrutura de diretórios do projeto",
+    "expected_keywords": ["diretório", "arquivo", "pasta", "estrutura"],
+    "expected_tools": ["explore_repository"],
+    "category": "discovery"
+  },
+  {
+    "id": "v2_03",
+    "question": "Qual a arquitetura geral do projeto?",
+    "expected_keywords": ["arquitetura", "módulo", "camada", "fluxo"],
+    "expected_tools": ["get_project_architecture"],
+    "category": "architecture"
+  },
+  {
+    "id": "v2_04",
+    "question": "Como os dados fluem desde a fonte bruta até a camada final?",
+    "expected_keywords": ["linhagem", "bronze", "silver", "gold", "fonte", "fluxo"],
+    "expected_tools": ["map_data_lineage"],
+    "category": "lineage"
+  },
+  {
+    "id": "v2_05",
+    "question": "Quais colunas existem na camada gold?",
+    "expected_keywords": ["coluna", "gold", "dicionário", "campo"],
+    "expected_tools": ["get_data_dictionary"],
+    "category": "data_dictionary"
+  },
+  {
+    "id": "v2_06",
+    "question": "Qual o schedule do pipeline de orquestração?",
+    "expected_keywords": ["schedule", "cron", "pipeline", "job", "agendamento"],
+    "expected_tools": ["analyze_pipeline_config"],
+    "category": "pipeline"
+  },
+  {
+    "id": "v2_07",
+    "question": "Como o AI agent está configurado — qual LLM usa e quais tools tem?",
+    "expected_keywords": ["llm", "tool", "agent", "modelo", "configuração"],
+    "expected_tools": ["get_agent_tools_spec"],
+    "category": "agent"
+  },
+  {
+    "id": "v2_08",
+    "question": "Quais são os modelos dbt disponíveis e como estão materializados?",
+    "expected_keywords": ["dbt", "modelo", "materialização", "table", "view"],
+    "expected_tools": ["get_data_dictionary", "map_data_lineage"],
+    "category": "dbt"
+  },
+  {
+    "id": "v2_09",
+    "question": "Tem algum arquivo CSV ou Parquet no repositório?",
+    "expected_keywords": ["csv", "parquet", "dado", "arquivo"],
+    "expected_tools": ["discover_project", "read_data_file"],
+    "category": "data_files"
+  },
+  {
+    "id": "v2_10",
+    "question": "Quais bibliotecas Python esse projeto usa como dependência?",
+    "expected_keywords": ["biblioteca", "dependência", "requirements", "import", "pacote"],
+    "expected_tools": ["map_code_dependencies", "explore_repository"],
+    "category": "dependencies"
+  },
+  {
+    "id": "v2_11",
+    "question": "Quais módulos Python mais são importados dentro do projeto?",
+    "expected_keywords": ["import", "módulo", "dependência", "interno"],
+    "expected_tools": ["map_code_dependencies"],
+    "category": "dependencies"
+  },
+  {
+    "id": "v2_12",
+    "question": "Gere documentação técnica sobre a arquitetura do projeto",
+    "expected_keywords": ["arquitetura", "documentação", "camada", "fluxo"],
+    "expected_tools": ["generate_documentation"],
+    "category": "documentation"
+  },
+  {
+    "id": "v2_13",
+    "question": "Quais melhorias técnicas você sugere para esse repositório?",
+    "expected_keywords": ["melhoria", "sugestão", "problema", "oportunidade", "prioridade"],
+    "expected_tools": ["suggest_improvements"],
+    "category": "improvements"
+  },
+  {
+    "id": "v2_14",
+    "question": "Por que esse projeto tem essa estrutura de camadas (Bronze, Silver, Gold)?",
+    "expected_keywords": ["medallion", "bronze", "silver", "gold", "trade-off", "decisão"],
+    "expected_tools": ["review_architecture", "get_project_architecture"],
+    "category": "architecture_review"
+  },
+  {
+    "id": "v2_15",
+    "question": "O que o modelo bronze faz? Explica o SQL dele",
+    "expected_keywords": ["bronze", "sql", "transformação", "fonte", "model"],
+    "expected_tools": ["analyze_dbt_model", "analyze_code"],
+    "category": "dbt"
+  },
+  {
+    "id": "v2_16",
+    "question": "Quais testes de qualidade de dados estão definidos?",
+    "expected_keywords": ["teste", "qualidade", "not_null", "unique", "validação"],
+    "expected_tools": ["get_data_dictionary", "analyze_dbt_model"],
+    "category": "data_quality"
+  },
+  {
+    "id": "v2_17",
+    "question": "Tem algum guardrail ou regra de segurança no AI agent?",
+    "expected_keywords": ["guardrail", "segurança", "regra", "instrução", "restrição"],
+    "expected_tools": ["get_agent_tools_spec"],
+    "category": "agent"
+  },
+  {
+    "id": "v2_18",
+    "question": "Como está configurado o ambiente de produção vs desenvolvimento?",
+    "expected_keywords": ["prod", "dev", "ambiente", "target", "configuração"],
+    "expected_tools": ["analyze_pipeline_config"],
+    "category": "pipeline"
+  },
+  {
+    "id": "v2_19",
+    "question": "Existe observabilidade ou logging no projeto?",
+    "expected_keywords": ["log", "observabilidade", "mlflow", "monitoring", "rastreamento"],
+    "expected_tools": ["get_agent_tools_spec", "get_project_architecture"],
+    "category": "observability"
+  },
+  {
+    "id": "v2_20",
+    "question": "Gere documentação sobre o pipeline de dados do projeto",
+    "expected_keywords": ["pipeline", "documentação", "etapa", "orquestração"],
+    "expected_tools": ["generate_documentation"],
+    "category": "documentation"
+  },
+  {
+    "id": "v2_21",
+    "question": "Quais são as dependências entre os modelos dbt?",
+    "expected_keywords": ["dependência", "ref", "source", "linhagem", "modelo"],
+    "expected_tools": ["map_data_lineage"],
+    "category": "lineage"
+  },
+  {
+    "id": "v2_22",
+    "question": "Busca como o campo de óbito é calculado no código",
+    "expected_keywords": ["campo", "cálculo", "sql", "lógica", "coluna"],
+    "expected_tools": ["search_codebase"],
+    "category": "rag_search"
+  },
+  {
+    "id": "v2_23",
+    "question": "Leia o arquivo de configuração principal do projeto e me explique",
+    "expected_keywords": ["configuração", "variável", "parâmetro", "setup"],
+    "expected_tools": ["analyze_code"],
+    "category": "code_analysis"
+  },
+  {
+    "id": "v2_24",
+    "question": "Quantos arquivos Python o projeto tem e quais os principais entry points?",
+    "expected_keywords": ["python", "arquivo", "entry point", "main", "quantidade"],
+    "expected_tools": ["map_code_dependencies", "discover_project"],
+    "category": "dependencies"
+  },
+  {
+    "id": "v2_25",
+    "question": "Tem algum secret ou senha hardcoded no repositório?",
+    "expected_keywords": ["secret", "senha", "credencial", "hardcoded", "segurança"],
+    "expected_tools": ["explore_repository"],
+    "category": "security"
+  }
+]
