@@ -40,6 +40,82 @@ logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 
+def _load_sentence_transformer(model_name: str, timeout_seconds: int = 300) -> SentenceTransformer:
+    """Carrega SentenceTransformer com timeout para downloads do HuggingFace.
+
+    HuggingFace downloads podem travar indefinidamente em conexões ruins.
+    Este wrapper detecta timeouts longos e falha com mensagem clara.
+
+    Args:
+        model_name: Nome do modelo (ex: 'all-MiniLM-L6-v2')
+        timeout_seconds: Timeout em segundos (padrão: 5 min)
+
+    Raises:
+        TimeoutError: Se o carregamento exceder o timeout
+        FileNotFoundError: Se o modelo não puder ser carregado
+    """
+    import threading
+    result = None
+    exception = None
+
+    def load():
+        nonlocal result, exception
+        try:
+            result = SentenceTransformer(model_name)
+        except Exception as e:
+            exception = e
+
+    thread = threading.Thread(target=load, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout_seconds)
+
+    if thread.is_alive():
+        raise TimeoutError(
+            f"Carregamento de modelo '{model_name}' expirou após {timeout_seconds}s.\n"
+            f"Possíveis causas:\n"
+            f"  • Conexão de internet lenta ou instável\n"
+            f"  • HuggingFace hub indisponível\n"
+            f"Solução: tente novamente em alguns minutos."
+        )
+
+    if exception:
+        raise exception
+
+    return result
+
+
+def _load_cross_encoder(model_name: str, timeout_seconds: int = 300) -> CrossEncoder:
+    """Carrega CrossEncoder com timeout para downloads do HuggingFace."""
+    import threading
+    result = None
+    exception = None
+
+    def load():
+        nonlocal result, exception
+        try:
+            result = CrossEncoder(model_name)
+        except Exception as e:
+            exception = e
+
+    thread = threading.Thread(target=load, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout_seconds)
+
+    if thread.is_alive():
+        raise TimeoutError(
+            f"Carregamento de reranker '{model_name}' expirou após {timeout_seconds}s.\n"
+            f"Possíveis causas:\n"
+            f"  • Conexão de internet lenta ou instável\n"
+            f"  • HuggingFace hub indisponível\n"
+            f"Solução: tente novamente em alguns minutos."
+        )
+
+    if exception:
+        raise exception
+
+    return result
+
+
 @dataclass
 class SearchResult:
     """Resultado de busca com conteúdo, metadados e score de relevância."""
@@ -147,8 +223,8 @@ class Retriever:
             chunks = data.get("chunks", [])
             repo_id = data.get("repo_id")
 
-        model = SentenceTransformer(model_name)
-        reranker = CrossEncoder(reranker_name)
+        model = _load_sentence_transformer(model_name)
+        reranker = _load_cross_encoder(reranker_name)
         return cls(index, chunks, model, reranker, repo_id=repo_id)
 
     def is_synced(self, current_path: str) -> bool:

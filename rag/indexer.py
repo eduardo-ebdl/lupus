@@ -184,13 +184,56 @@ def collect_chunks(srag_root: str) -> list[dict]:
     return chunks
 
 
+def _load_sentence_transformer(model_name: str, timeout_seconds: int = 300) -> SentenceTransformer:
+    """Carrega SentenceTransformer com timeout para downloads do HuggingFace.
+
+    HuggingFace downloads podem travar indefinidamente em conexões ruins.
+    Este wrapper detecta timeouts longos e falha com mensagem clara.
+
+    Args:
+        model_name: Nome do modelo (ex: 'all-MiniLM-L6-v2')
+        timeout_seconds: Timeout em segundos (padrão: 5 min)
+
+    Raises:
+        TimeoutError: Se o carregamento exceder o timeout
+    """
+    import threading
+    result = None
+    exception = None
+
+    def load():
+        nonlocal result, exception
+        try:
+            result = SentenceTransformer(model_name)
+        except Exception as e:
+            exception = e
+
+    thread = threading.Thread(target=load, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout_seconds)
+
+    if thread.is_alive():
+        raise TimeoutError(
+            f"Carregamento de modelo '{model_name}' expirou após {timeout_seconds}s.\n"
+            f"Possíveis causas:\n"
+            f"  • Conexão de internet lenta ou instável\n"
+            f"  • HuggingFace hub indisponível\n"
+            f"Solução: tente novamente em alguns minutos."
+        )
+
+    if exception:
+        raise exception
+
+    return result
+
+
 def build_faiss_index(chunks: list[dict], model_name: str = EMBEDDING_MODEL) -> tuple[Any, list[dict]]:
     """Gera embeddings e constrói índice FAISS (IndexFlatIP com vetores normalizados = cosine similarity).
 
     Retorna (faiss_index, chunks_com_embedding_id).
     """
     print(f"Carregando modelo de embeddings: {model_name}")
-    model = SentenceTransformer(model_name)
+    model = _load_sentence_transformer(model_name)
 
     texts = [c["content"] for c in chunks]
     print(f"Gerando embeddings para {len(texts)} chunks...")

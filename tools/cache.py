@@ -5,6 +5,7 @@ A chave de cache inclui PROJECT_PATH — troca de repositório invalida automati
 """
 
 import hashlib
+import json
 import threading
 import time
 
@@ -17,9 +18,15 @@ _last_purge_time = time.time()  # Timestamp do último purge
 
 
 def make_key(func_name: str, **kwargs) -> str:
-    """Gera chave de cache baseada na função, PROJECT_PATH e argumentos."""
+    """Gera chave de cache baseada na função, PROJECT_PATH e argumentos.
+
+    Serializa kwargs como JSON para garantir consistência com argumentos variados
+    (listas, dicts, números, etc.). Importante para evitar cache misses/collisions.
+    """
     project_path = get_project_path()
-    raw = f"{func_name}:{project_path}:{sorted(kwargs.items())}"
+    # Serializa kwargs como JSON com sort_keys=True para ordem consistente
+    kwargs_str = json.dumps(kwargs, sort_keys=True, default=str, ensure_ascii=False)
+    raw = f"{func_name}:{project_path}:{kwargs_str}"
     return hashlib.md5(raw.encode()).hexdigest()
 
 

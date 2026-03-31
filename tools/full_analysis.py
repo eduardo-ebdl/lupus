@@ -24,10 +24,14 @@ def _get_project_root() -> str:
 
 def _read_file_safe(project_root: str, file_path: str, max_chars: int = 3000) -> str | None:
     """Lê um arquivo do repositório com limite de caracteres."""
-    full_path = os.path.normpath(os.path.join(project_root, file_path))
+    # Normaliza slashes para consistência entre plataformas
+    file_path_normalized = file_path.replace("\\", "/").lstrip("./")
+    full_path = os.path.normpath(os.path.join(project_root, file_path_normalized))
     norm_root = os.path.normpath(project_root)
     try:
-        if os.path.commonpath([full_path, norm_root]) != norm_root:
+        common = os.path.commonpath([full_path, norm_root])
+        # Compara paths normalizados (sem mistura de separadores)
+        if os.path.normpath(common) != os.path.normpath(norm_root):
             return None
     except ValueError:
         return None

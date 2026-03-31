@@ -29,16 +29,6 @@ def _sanitize_filename(topic: str) -> str:
     return name or "documento"
 
 
-from tools.architecture import get_project_architecture
-from tools.dbt_analyzer import analyze_dbt_model
-from tools.lineage import map_data_lineage
-from tools.agent_analyzer import get_agent_tools_spec
-from tools.pipeline_analyzer import analyze_pipeline_config
-from tools.data_dictionary import get_data_dictionary
-from tools.project_discovery import discover_project
-from tools.repository_explorer import explore_repository
-
-
 def _get_project_root() -> str:
     """Retorna o root do projeto via ctx_manager (fonte centralizada)."""
     from core.context_manager import get_project_path
@@ -48,6 +38,58 @@ def _get_project_root() -> str:
 def _get_llm() -> ChatGoogleGenerativeAI:
     """Retorna instância do Gemini para os sub-agents."""
     return ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+
+
+def _get_domain_tools():
+    """Lazy import de domain tools para evitar circular imports.
+
+    Retorna dict com as tools importadas quando chamado.
+    """
+    from tools.architecture import get_project_architecture
+    from tools.dbt_analyzer import analyze_dbt_model
+    from tools.lineage import map_data_lineage
+    from tools.agent_analyzer import get_agent_tools_spec
+    from tools.pipeline_analyzer import analyze_pipeline_config
+    from tools.data_dictionary import get_data_dictionary
+    from tools.project_discovery import discover_project
+    from tools.repository_explorer import explore_repository
+
+    return {
+        "get_project_architecture": get_project_architecture,
+        "analyze_dbt_model": analyze_dbt_model,
+        "map_data_lineage": map_data_lineage,
+        "get_agent_tools_spec": get_agent_tools_spec,
+        "analyze_pipeline_config": analyze_pipeline_config,
+        "get_data_dictionary": get_data_dictionary,
+        "discover_project": discover_project,
+        "explore_repository": explore_repository,
+    }
+
+
+def _validate_input(value: str, field_name: str, max_length: int = 500, allow_empty: bool = False) -> str | dict:
+    """Valida e limpa input de usuário. Retorna erro ou valor limpo.
+
+    Args:
+        value: String a validar
+        field_name: Nome do campo (para mensagem de erro)
+        max_length: Máximo de caracteres permitidos
+        allow_empty: Se False, rejeita strings vazias
+
+    Returns:
+        String limpa ou dicionário com chave "error" se inválido
+    """
+    if not isinstance(value, str):
+        return {"error": f"'{field_name}' deve ser texto, não {type(value).__name__}."}
+
+    value = value.strip()
+
+    if not allow_empty and not value:
+        return {"error": f"'{field_name}' não pode estar vazio."}
+
+    if len(value) > max_length:
+        return {"error": f"'{field_name}' excede o máximo de {max_length} caracteres (atual: {len(value)})."}
+
+    return value
 
 
 def _invoke_with_retry(messages: list[dict], max_retries: int = 2) -> str:
@@ -73,12 +115,16 @@ def _invoke_with_retry(messages: list[dict], max_retries: int = 2) -> str:
 def _read_file_safe(file_path: str) -> str:
     """Lê um arquivo do repositório configurado de forma segura."""
     base = _get_project_root()
-    full_path = os.path.normpath(os.path.join(base, file_path))
+    # Normaliza slashes para consistência entre plataformas
+    file_path_normalized = file_path.replace("\\", "/").lstrip("./")
+    full_path = os.path.normpath(os.path.join(base, file_path_normalized))
     norm_base = os.path.normpath(base)
 
     # Segurança: não permitir sair do repositório configurado
     try:
-        if os.path.commonpath([full_path, norm_base]) != norm_base:
+        common = os.path.commonpath([full_path, norm_base])
+        # Compara paths normalizados (sem mistura de separadores)
+        if os.path.normpath(common) != os.path.normpath(norm_base):
             return f"ERRO: Path '{file_path}' está fora do diretório permitido."
     except ValueError:
         return f"ERRO: Path '{file_path}' está fora do diretório permitido."
@@ -140,7 +186,16 @@ def analyze_code(file_path: str, question: str) -> str:
                    (ex: 'models/silver/silver_srag_data.sql', 'src/app.py').
         question: Pergunta específica sobre o arquivo."""
 
-    code = _read_file_safe(file_path)
+    # Validação de inputs
+    validated_path = _validate_input(file_path, "file_path", max_length=200)
+    if isinstance(validated_path, dict):
+        return json.dumps(validated_path, ensure_ascii=False)
+
+    validated_question = _validate_input(question, "question", max_length=500)
+    if isinstance(validated_question, dict):
+        return json.dumps(validated_question, ensure_ascii=False)
+
+    code = _read_file_safe(validated_path)
     if code.startswith("ERRO"):
         return json.dumps({"error": code}, ensure_ascii=False)
 
@@ -267,17 +322,46 @@ def generate_documentation(topic: str, output_filename: str = "", style: str = "
                          e detalhado (mínimo 8-10 páginas). Use para trabalhos
                          acadêmicos, relatórios formais, TCCs, projetos integradores."""
 
+    # Validação de inputs
+    validated_topic = _validate_input(topic, "topic", max_length=200)
+    if isinstance(validated_topic, dict):
+        return json.dumps(validated_topic, ensure_ascii=False)
+
+    validated_style = _validate_input(style, "style", max_length=50)
+    if isinstance(validated_style, dict):
+        return json.dumps(validated_style, ensure_ascii=False)
+
+    if validated_style not in ("tecnico", "abnt"):
+        return json.dumps(
+            {"error": f"Style '{validated_style}' inválido. Use 'tecnico' ou 'abnt'."},
+            ensure_ascii=False
+        )
+
+    if output_filename:
+        validated_filename = _validate_input(output_filename, "output_filename", max_length=100)
+        if isinstance(validated_filename, dict):
+            return json.dumps(validated_filename, ensure_ascii=False)
+        # Valida extensão
+        if not any(validated_filename.lower().endswith(ext) for ext in [".md", ".yml", ".yaml", ".txt"]):
+            return json.dumps(
+                {"error": "output_filename deve ter extensão .md, .yml, .yaml ou .txt"},
+                ensure_ascii=False
+            )
+    else:
+        validated_filename = ""
+
     project_root = _get_project_root()
+    tools = _get_domain_tools()
 
     # 1. Coleta contexto lendo arquivos diretamente (sem depender de domain tools)
-    discovery_raw = discover_project.invoke({})
+    discovery_raw = tools["discover_project"].invoke({})
     discovery = json.loads(discovery_raw)
     technologies = discovery.get("technologies", {})
 
     context_parts = [f"## Tecnologias Detectadas\n{json.dumps({k: v for k, v in technologies.items() if v.get('found')}, ensure_ascii=False, indent=2)}"]
 
     # Lê arquivos-chave do repo diretamente (I/O puro, sem LLM)
-    explore_raw = explore_repository.invoke({"max_depth": 3})
+    explore_raw = tools["explore_repository"].invoke({"max_depth": 3})
     explore_data = json.loads(explore_raw)
     all_files = explore_data.get("files", [])
     key_files = explore_data.get("key_files", [])
@@ -307,12 +391,12 @@ def generate_documentation(topic: str, output_filename: str = "", style: str = "
 
     if has_dbt or has_databricks or has_notebooks:
         try:
-            context_parts.append(f"## Arquitetura\n{get_project_architecture.invoke({})}")
+            context_parts.append(f"## Arquitetura\n{tools['get_project_architecture'].invoke({})}")
         except Exception:
             pass  # falha silenciosa intencional: domain tools são enriquecimento opcional
     if has_dbt:
         try:
-            context_parts.append(f"## Linhagem\n{map_data_lineage.invoke({})}")
+            context_parts.append(f"## Linhagem\n{tools['map_data_lineage'].invoke({})}")
         except Exception:
             pass  # falha silenciosa intencional: domain tools são enriquecimento opcional
 
@@ -336,7 +420,7 @@ def generate_documentation(topic: str, output_filename: str = "", style: str = "
 
     # 3. Salva o arquivo
     allowed_extensions = {".md", ".yml", ".yaml", ".txt"}
-    filename = output_filename.strip() if output_filename else (_sanitize_filename(topic) + default_ext)
+    filename = validated_filename.strip() if validated_filename else (_sanitize_filename(validated_topic) + default_ext)
     filename = os.path.basename(filename)  # impede path traversal (ex: "../../etc/file")
     _, ext = os.path.splitext(filename)
     if ext.lower() not in allowed_extensions:
@@ -404,8 +488,14 @@ def review_architecture(question: str) -> str:
         question: Pergunta sobre arquitetura ou decisão de design
                   (ex: 'por que o bronze é ephemeral?', 'quais os trade-offs do liquid clustering?')."""
 
+    # Validação de input
+    validated_question = _validate_input(question, "question", max_length=500)
+    if isinstance(validated_question, dict):
+        return json.dumps(validated_question, ensure_ascii=False)
+
     # Descobrir o que existe no projeto para coletar o contexto certo
-    discovery_raw = discover_project.invoke({})
+    tools = _get_domain_tools()
+    discovery_raw = tools["discover_project"].invoke({})
     discovery = json.loads(discovery_raw)
     technologies = discovery.get("technologies", {})
 
@@ -417,19 +507,19 @@ def review_architecture(question: str) -> str:
     question_lower = question.lower()
 
     if has_dbt or has_databricks or has_notebooks:
-        context_parts.append(f"## Arquitetura Geral\n{get_project_architecture.invoke({})}")
+        context_parts.append(f"## Arquitetura Geral\n{tools['get_project_architecture'].invoke({})}")
 
     if has_dbt:
-        context_parts.append(f"## Linhagem de Dados\n{map_data_lineage.invoke({})}")
+        context_parts.append(f"## Linhagem de Dados\n{tools['map_data_lineage'].invoke({})}")
 
     if has_databricks:
-        context_parts.append(f"## Pipeline\n{analyze_pipeline_config.invoke({})}")
+        context_parts.append(f"## Pipeline\n{tools['analyze_pipeline_config'].invoke({})}")
 
     if has_dbt and any(kw in question_lower for kw in ["modelo", "dbt", "bronze", "silver", "gold", "sql", "materializ"]):
-        context_parts.append(f"## Dicionário de Dados\n{get_data_dictionary.invoke({})}")
+        context_parts.append(f"## Dicionário de Dados\n{tools['get_data_dictionary'].invoke({})}")
 
     if has_notebooks and any(kw in question_lower for kw in ["agent", "agente", "llm", "tool", "guardrail", "react"]):
-        context_parts.append(f"## AI Agent\n{get_agent_tools_spec.invoke({})}")
+        context_parts.append(f"## AI Agent\n{tools['get_agent_tools_spec'].invoke({})}")
 
     # Fallback
     if not context_parts:
@@ -492,8 +582,17 @@ def suggest_improvements(focus: str = "") -> str:
         focus: Área específica de foco (ex: 'arquitetura', 'testes', 'segurança',
                'performance', 'documentação', 'ci/cd'). Vazio = análise completa.
     """
+    # Validação de input
+    if focus:
+        validated_focus = _validate_input(focus, "focus", max_length=100)
+        if isinstance(validated_focus, dict):
+            return json.dumps(validated_focus, ensure_ascii=False)
+    else:
+        validated_focus = ""
+
     # 1. Descobrir stack
-    discovery_raw = discover_project.invoke({})
+    tools = _get_domain_tools()
+    discovery_raw = tools["discover_project"].invoke({})
     discovery = json.loads(discovery_raw)
 
     if "error" in discovery:
@@ -503,7 +602,7 @@ def suggest_improvements(focus: str = "") -> str:
     technologies = discovery.get("technologies", {})
 
     # 2. Estrutura do repositório (profundidade 2 para não sobrecarregar contexto)
-    structure_raw = explore_repository.invoke({"max_depth": 2})
+    structure_raw = tools["explore_repository"].invoke({"max_depth": 2})
     structure = json.loads(structure_raw)
 
     # 3. Montar lista de tecnologias detectadas
@@ -552,8 +651,8 @@ def suggest_improvements(focus: str = "") -> str:
     context = "\n\n".join(context_parts)
 
     focus_instruction = (
-        f"\nFoco desta análise: **{focus}** — concentre as sugestões nessa área."
-        if focus else ""
+        f"\nFoco desta análise: **{validated_focus}** — concentre as sugestões nessa área."
+        if validated_focus else ""
     )
 
     prompt = _IMPROVEMENT_PROMPT.format(

@@ -232,7 +232,13 @@ def _run_with_streaming(agent, user_input: str, config: dict, turn: int = 0) -> 
 
             if thread.is_alive():
                 # Timeout atingido — mensagem clara e não bloqueia mais
-                displayed = "[red]⏱️ Tempo limite (3 min)[/red] — operação muito lenta.\nTente novamente ou use [bold]/repo <URL>[/bold] para configurar um repositório específico."
+                displayed = (
+                    "[red]⏱️ Timeout (3 min)[/red] — operação muito lenta\n\n"
+                    "[yellow]Tente:[/yellow]\n"
+                    "  • Uma pergunta mais simples (ex: 'Qual a arquitetura?')\n"
+                    "  • Trocar de repo com [bold]/repo <URL>[/bold]\n"
+                    "  • Executar `python scripts/build_rag_index.py` se usar search"
+                )
                 live.update(_make_panel(displayed))
             elif exception:
                 # Erro durante execução
