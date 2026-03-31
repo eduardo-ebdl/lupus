@@ -57,3 +57,13 @@ target-version = ["py311"]
 line-length = 100
 target-version = "py311"
 select = ["E", "F", "W"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = "-v --strict-markers"
+markers = [
+    "unit: Unit tests (fast, no external dependencies)",
+    "integration: Integration tests (may require setup)",
+    "slow: Tests that take significant time to run",
+]

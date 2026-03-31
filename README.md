@@ -305,6 +305,10 @@ source venv/bin/activate  # Linux/macOS
 # ou: venv\Scripts\activate  # Windows
 
 # 3. Instalar dependências
+# Para PRODUÇÃO (dependências fixas, reproduzível):
+pip install -r requirements.lock
+
+# Para DESENVOLVIMENTO (versões mais flexíveis):
 pip install -r requirements.txt
 
 # 4. Configurar ambiente
@@ -327,6 +331,26 @@ Após iniciar, o agente deve estar pronto para receber consultas. Exemplos de pr
 "Qual a arquitetura do projeto?"
 "Identifique as tecnologias usadas"
 "Analisa https://github.com/dbt-labs/jaffle_shop"
+```
+
+### Gerenciamento de Dependências
+
+O projeto mantém dois arquivos de requisitos:
+
+| Arquivo | Uso | Vantagens |
+|---------|-----|-----------|
+| `requirements.lock` | **Produção** e CI/CD | Versões exatamente fixadas, builds reproduzíveis |
+| `requirements.txt` | **Desenvolvimento** | Versões com maior flexibilidade (>=), mais fácil adicionar/atualizar dependências |
+
+**Fluxo Recomendado:**
+- Produção: `pip install -r requirements.lock` — garante exatamente as versões testadas
+- Dev: `pip install -r requirements.txt` — permite minor/patch updates automáticas
+
+Para atualizar o lockfile após mudar requirements.txt:
+```bash
+pip freeze > requirements.lock
+git add requirements.lock
+git commit -m "chore: update lockfile"
 ```
 
 ---
