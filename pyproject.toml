@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lupus"
+version = "0.1.0"
+description = "AI Code Intelligence Agent for repository analysis"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "Eduardo Lima", email = "eduardo@example.com"}]
+keywords = ["ai", "code-analysis", "agent", "langgraph"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+]
+
+dependencies = [
+    "deepagents>=0.4.12",
+    "pyyaml>=6.0",
+    "langchain>=1.2.8",
+    "langchain-google-genai>=4.2.1",
+    "langgraph>=1.0.7",
+    "langgraph-checkpoint-sqlite>=3.0.0",
+    "python-dotenv>=1.2.1",
+    "rich>=14.0.0",
+    "sentence-transformers>=5.0.0",
+    "faiss-cpu>=1.7.4",
+    "rank-bm25>=0.2.2",
+    "numpy>=2.0.0",
+    "pandas>=2.0.0",
+    "openpyxl>=3.1.0",
+    "langsmith>=0.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/eduardo-ebdl/lupus"
+Repository = "https://github.com/eduardo-ebdl/lupus"
+
+[tool.setuptools]
+packages = [""]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "W"]
