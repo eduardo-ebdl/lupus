@@ -1,5 +1,6 @@
 """Lupus — AI Code Intelligence Agent (CLI Chat)"""
 
+import json
 import logging
 import os
 import time
@@ -98,7 +99,7 @@ def _print_banner(repo_name: str):
         Panel(
             f"[bold white]Lupus[/bold white] — AI Code Intelligence Agent\n"
             f"[dim]Repositório: [cyan]{repo_name}[/cyan][/dim]\n\n"
-            f"[dim italic]Comandos: /export · /limpar · /repo · /status · /reportar · sair[/dim italic]",
+            f"[dim italic]Comandos: /export · /limpar · /repo [url] · /status · /reportar · sair[/dim italic]",
             border_style="bright_yellow",
             title="[bold yellow]Lupus[/bold yellow]",
             title_align="left",
@@ -220,7 +221,7 @@ def _run_with_streaming(agent, user_input: str, config: dict, turn: int = 0) -> 
 
             thread = threading.Thread(target=invoke_agent, daemon=True)
             thread.start()
-            thread.join(timeout=60)  # 60 segundos de timeout
+            thread.join(timeout=120)  # 120 segundos de timeout — clonar + analyze pode ser lento
 
             if thread.is_alive():
                 displayed = "[yellow]Tempo limite atingido[/yellow]. A operação demorou muito."
@@ -316,8 +317,23 @@ def chat():
             console.print("[dim]Histórico limpo — nova conversa iniciada.[/dim]\n")
             continue
 
-        if cmd == "/repo":
-            console.print(f"\n[dim]Repositório ativo: [cyan]{ctx_manager.path}[/cyan][/dim]\n")
+        if cmd.startswith("/repo"):
+            # /repo sem args → mostra repositório ativo
+            # /repo <url> → clona repositório da URL
+            parts = cmd.split(None, 1)
+            if len(parts) == 1:
+                console.print(f"\n[dim]Repositório ativo: [cyan]{ctx_manager.path}[/cyan][/dim]\n")
+            else:
+                url = parts[1].strip()
+                console.print(f"\n[dim]Clonando {url}...[/dim]")
+                from tools.github_integration import clone_repository
+                result_json = clone_repository.invoke({"url": url, "branch": ""})
+                result = json.loads(result_json)
+                if "error" in result:
+                    console.print(f"[red]Erro: {result.get('error')}[/red]\n")
+                else:
+                    console.print(f"[green]✓ Repositório '{result.get('repository')}' clonado![/green]")
+                    console.print(f"[dim]Path: {result.get('cloned_to')}[/dim]\n")
             continue
 
         if cmd == "/status":
