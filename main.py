@@ -408,41 +408,10 @@ def chat():
         console.print()
         turn_counter += 1
 
-        # BYPASS: se não tem repositório real, chama LLM direto (agente não trava)
-        if not ctx_manager.path or ctx_manager.path.endswith("srag_agent"):
-            # Modo conversacional — mantém identidade do Lupus
-            from langchain_google_genai import ChatGoogleGenerativeAI
-            from langchain_core.messages import HumanMessage, SystemMessage
-
-            llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
-
-            # System prompt simplificado — sem tools, só conversação
-            simple_prompt = """Você é o Lupus, um AI Engineer especializado em análise técnica de repositórios.
-
-Responda em português de forma amigável e profissional.
-
-IMPORTANTE: O usuário ainda NÃO configurou um repositório.
-- Se ele perguntar sobre análise de código: sugira que use /repo <URL> para clonar um repositório
-- Se for pergunta conversacional simples: responda normalmente, mantendo sua identidade técnica
-- Sempre que apropriado, sugira que configure um repositório para análises mais profundas"""
-
-            messages = [
-                SystemMessage(content=simple_prompt),
-                HumanMessage(content=user_input),
-            ]
-            response_obj = llm.invoke(messages)
-            response = response_obj.content if hasattr(response_obj, 'content') else str(response_obj)
-            tool_calls = []
-            console.print(Panel(
-                response,
-                border_style="bright_blue",
-                title="[bold blue]Lupus[/bold blue]",
-                title_align="left",
-                padding=(1, 2),
-            ))
-        else:
-            # Modo análise — usa agente com tools
-            response, tool_calls = _run_with_streaming(agent, user_input, config, turn=turn_counter)
+        # Usa agente em todos os casos — o system prompt em config.py já instruye
+        # quando usar tools (com repositório) vs conversação (sem repositório).
+        # Uma única superfície de manutenção: agent.invoke() sempre, agente decide.
+        response, tool_calls = _run_with_streaming(agent, user_input, config, turn=turn_counter)
 
         # Detecta warnings de RAG desatualizado na resposta (mesmo se oculto em JSON)
         try:
