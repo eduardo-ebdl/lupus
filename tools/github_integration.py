@@ -11,6 +11,7 @@ import os
 import shutil
 import stat
 import subprocess
+import time
 
 from langchain.tools import tool
 
@@ -85,18 +86,42 @@ def clone_repository(url: str, branch: str = "") -> str:
     # Diretório de destino: ~/lupus-repos/<repo_name>
     repos_base = os.path.join(os.path.expanduser("~"), "lupus-repos")
     dest_dir = os.path.join(repos_base, repo_name)
-
-    # Limpa TODOS os repos clonados anteriormente (mantém apenas 1 ativo)
-    if os.path.isdir(repos_base):
-        for entry in os.listdir(repos_base):
-            entry_path = os.path.join(repos_base, entry)
-            if os.path.isdir(entry_path):
-                try:
-                    shutil.rmtree(entry_path, onerror=_force_remove_readonly)
-                except OSError as e:
-                    logger.warning("Falha ao limpar repo anterior %s: %s", entry_path, e)
+    archive_dir = os.path.join(repos_base, ".archive")
 
     os.makedirs(repos_base, exist_ok=True)
+
+    # Se repositório de mesmo nome já existe, arquivar (não deletar!)
+    if os.path.isdir(dest_dir):
+        os.makedirs(archive_dir, exist_ok=True)
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        archive_path = os.path.join(archive_dir, f"{repo_name}_{timestamp}")
+        try:
+            shutil.move(dest_dir, archive_path)
+            logger.info(f"Repositório anterior arquivado em: {archive_path}")
+        except OSError as e:
+            logger.warning(f"Falha ao arquivar repo anterior: {e}")
+            # Se arquivamento falhar, tenta deletar (último recurso)
+            try:
+                shutil.rmtree(dest_dir, onerror=_force_remove_readonly)
+            except OSError:
+                pass  # Tenta clonar mesmo assim, pode falhar depois
+
+    # Limpeza de arquivos antigos (mantém últimos 5 arquivos)
+    if os.path.isdir(archive_dir):
+        try:
+            archives = sorted([
+                os.path.join(archive_dir, f)
+                for f in os.listdir(archive_dir)
+            ], key=os.path.getmtime, reverse=True)
+
+            # Delete tudo além dos últimos 5
+            for old_archive in archives[5:]:
+                try:
+                    shutil.rmtree(old_archive, onerror=_force_remove_readonly)
+                except OSError as e:
+                    logger.warning(f"Falha ao limpar arquivo antigo {old_archive}: {e}")
+        except OSError as e:
+            logger.warning(f"Erro ao limpar arquivos antigos: {e}")
 
     # Monta o comando git clone
     cmd = ["git", "clone", "--depth", "1"]
