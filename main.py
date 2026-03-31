@@ -228,15 +228,19 @@ def _run_with_streaming(agent, user_input: str, config: dict, turn: int = 0) -> 
 
             thread = threading.Thread(target=invoke_agent, daemon=True)
             thread.start()
-            thread.join(timeout=120)  # 120 segundos de timeout — clonar + analyze pode ser lento
+            thread.join(timeout=180)  # 180s timeout — mais tempo para análises pesadas
 
             if thread.is_alive():
-                displayed = "[yellow]Tempo limite atingido[/yellow]. A operação demorou muito."
+                # Timeout atingido — mensagem clara e não bloqueia mais
+                displayed = "[red]⏱️ Tempo limite (3 min)[/red] — operação muito lenta.\nTente novamente ou use [bold]/repo <URL>[/bold] para configurar um repositório específico."
                 live.update(_make_panel(displayed))
             elif exception:
-                raise exception
+                # Erro durante execução
+                displayed = f"[red]❌ Erro:[/red] {str(exception)[:100]}"
+                live.update(_make_panel(displayed))
             elif result is None:
-                displayed = "[red]Erro desconhecido[/red] — nenhuma resposta do agente."
+                # Sem resposta
+                displayed = "[red]❌ Sem resposta[/red] — agente não retornou dados.\nTente novamente com uma pergunta diferente."
                 live.update(_make_panel(displayed))
 
             # Extrai ferramenta usadas do histórico de mensagens
