@@ -25,5 +25,6 @@ generated_docs/
 exports/
 feedback/log.json
 *.db
+docs/
 feedback/
 srag_agent/
