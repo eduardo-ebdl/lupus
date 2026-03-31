@@ -481,6 +481,97 @@ Lupus aborda esses desafios através de:
 
 ---
 
+## Troubleshooting
+
+### Agente congela ou não responde
+
+**Sintoma:** Lupus fica travado ao fazer uma pergunta.
+
+**Causas e Soluções:**
+
+1. **Contexto do repositório muito grande**
+   - O agente limita análises a 8KB de conteúdo para evitar timeouts
+   - Solução: Faça perguntas mais específicas
+   - Exemplo: Ao invés de "analise tudo", tente "qual a estrutura do Bronze?"
+
+2. **Timeout de 3 minutos atingido**
+   - O agente tem limite de 180s para responder
+   - Solução: 
+     - Tente novamente com pergunta mais simples
+     - Mude de repositório com `/repo <URL>`
+     - Se usar busca semântica, rode `python scripts/build_rag_index.py` para reindexar
+
+3. **Índice RAG desatualizado**
+   - Se clonou um repositório novo, o índice FAISS pode estar desincronizado
+   - Solução: `python scripts/build_rag_index.py`
+   - O agente avisa quando detecta mismatch
+
+### HuggingFace model download trava
+
+**Sintoma:** Primeira execução fica presa ao baixar modelos de embeddings.
+
+**Causa:** Conexão instável com HuggingFace hub ou timeout de download.
+
+**Solução:**
+- Aguarde até 5 minutos (primeiro download baixa ~380MB)
+- Se timeout persistir, defina variável de ambiente:
+  ```bash
+  export HF_HUB_DOWNLOAD_TIMEOUT=600
+  ```
+
+### RAG warnings aparecem
+
+**Sintoma:** "O índice RAG está desatualizado para este repositório"
+
+**Causa:** Você clonou um repositório novo, mas o índice FAISS ainda é de outro repo.
+
+**Solução:**
+```bash
+python scripts/build_rag_index.py
+```
+
+O agente detecta automaticamente e avisa quando isso acontece.
+
+### Erro ao clonar repositório
+
+**Sintoma:** "git clone falhou"
+
+**Causas:**
+- URL inválida ou repositório privado (Lupus acessa apenas repos públicos)
+- Sem conexão com GitHub
+
+**Solução:**
+- Verifique se a URL é pública e válida
+- Teste em outro terminal: `git clone <URL>`
+
+### Problema ao ler arquivo
+
+**Sintoma:** "Arquivo não encontrado" ao usar `analyze_code`
+
+**Causa:** Caminho do arquivo está fora do repositório configurado.
+
+**Solução:**
+- Use caminhos relativos: `models/silver/arquivo.sql` (não caminho absoluto)
+- Confirme se o arquivo existe no repo com `/repo` info
+
+### DeepAgents não instala
+
+**Sintoma:** "deepagents not found" ou erro de instalação.
+
+**Solução:**
+1. Confirme Python 3.11+: `python --version`
+2. Upgrade pip: `pip install --upgrade pip`
+3. Instale deepagents 0.5.0+: `pip install deepagents==0.5.0a2`
+
+Se ainda falhar, crie venv nova:
+```bash
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+---
+
 ## Licença
 
 Projeto acadêmico para fins educacionais e de pesquisa.

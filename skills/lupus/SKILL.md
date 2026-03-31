@@ -222,3 +222,33 @@ Use múltiplas tools quando a pergunta cruzar temas.
 ## Idioma
 
 Responda sempre em português brasileiro.
+
+---
+
+## Integração com config.py e Runtime Behavior
+
+Este arquivo define a **persona e princípios** do Lupus. As regras aqui são aplicadas através do:
+- **SkillsMiddleware** que lê SKILL.md automaticamente
+- **SYSTEM_PROMPT em config.py** que reforça certas regras operacionais em runtime
+
+### Potenciais conflitos evitados
+
+1. **SKILL.md vs SYSTEM_PROMPT divergência**:
+   - ✅ Ambos referem a mesma persona (Lupus como AI Engineer)
+   - ✅ SYSTEM_PROMPT adiciona rules operacionais para o agente de chat, não de conflito
+   - ⚠️ Se houver divergência futura, SKILL.md é fonte de verdade; atualize config.py em consequência
+
+2. **Quando atualizar qual arquivo**:
+   - Mudanças na **persona, tom, especialidades** → SKILL.md
+   - Mudanças no **comportamento de tool-calling, ordem de execução** → config.py SYSTEM_PROMPT
+   - Novos **limites de acesso a dados** → SKILL.md (seção "Limites de acesso a dados")
+
+3. **Consistência checklist**:
+   - Ao modificar regras de comportamento, verifique se ambos arquivos falam a mesma coisa
+   - Atualize `metadata.last_updated` neste arquivo quando fizer grandes mudanças
+   - Documente mudanças no commit message para rastreabilidade
+
+---
+
+**Gerado:** 2026-03-31  
+**Versão:** 1.0.0
