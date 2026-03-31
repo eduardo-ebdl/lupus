@@ -67,74 +67,44 @@ A documentação gerada é salva automaticamente no diretório do projeto analis
 
 ```mermaid
 flowchart TD
-    User(["Usuário"])
-    User -->|pergunta| CLI
-
-    subgraph CLI["Interface CLI (main.py)"]
-        IO["Entrada/Saída via Rich"]
-    end
-
-    CLI -->|invoca| Agent
-
-    subgraph Agent["Agente (LangGraph + config.py)"]
-        direction TB
-
-        subgraph MW["Stack de Middleware"]
-            direction LR
-            SK["SkillsMiddleware (SKILL.md)"]
-            ME["MemoryMiddleware (AGENTS.md)"]
-            FS["FilesystemMiddleware"]
-            PT["PatchToolCallsMiddleware"]
-            TD["TodoListMiddleware"]
-        end
-
-        LLM["Gemini 2.5 Flash LLM"]
-        MW -->|contexto enriquecido| LLM
-    end
-
-    LLM -->|invocação de tool| Tools
-
-    subgraph Tools["Tools (17 total)"]
-        direction LR
-
-        subgraph DISC["Discovery (5)"]
-            direction TB
-            D1["discover_project"]
-            D2["explore_repository"]
-            D3["read_data_file"]
-            D4["clone_repository"]
-            D5["analyze_full_repository"]
-        end
-
-        subgraph DT["Análise de Domínio (7)"]
-            direction TB
-            T1["get_project_architecture"]
-            T2["analyze_dbt_model"]
-            T3["map_data_lineage"]
-            T4["get_agent_tools_spec"]
-            T5["analyze_pipeline_config"]
-            T6["get_data_dictionary"]
-            T7["map_code_dependencies"]
-        end
-
-        subgraph SA["Sub-agentes (4)"]
-            direction TB
-            S1["analyze_code"]
-            S2["generate_documentation"]
-            S3["review_architecture"]
-            S4["suggest_improvements"]
-        end
-
-        subgraph RAG["RAG (1)"]
-            SC["search_codebase"]
-        end
-    end
-
-    Tools -->|resultados| LLM
-    LLM -->|resposta| CLI
-    CLI -->|output formatado| User
-
-    Agent -.->|rastreamento opcional| LS["LangSmith (LANGCHAIN_TRACING_V2=true)"]
+    User(["👤 Usuário<br/>(pergunta em português)"])
+    
+    User -->|texto| CLI["💻 Interface CLI<br/>(main.py + Rich)"]
+    
+    CLI -->|invoca| Agent["🤖 Agente LangGraph<br/>(config.py)"]
+    
+    Agent -->|lê persona| Skill["📋 SKILL.md<br/>(identidade Lupus)"]
+    
+    Agent -->|decisão| Decision{"Qual ferramenta<br/>usar?"}
+    
+    Decision -->|discovery| T1["🔍 discover_project<br/>explore_repository"]
+    Decision -->|domínio| T2["📊 analyze_dbt_model<br/>map_data_lineage"]
+    Decision -->|síntese| T3["✍️ generate_documentation<br/>review_architecture"]
+    Decision -->|busca| T4["🔎 search_codebase<br/>(RAG semântico)"]
+    
+    T1 --> Tools["Tools (17 total)<br/>leem repositório"]
+    T2 --> Tools
+    T3 --> Tools
+    T4 --> Tools
+    
+    Tools -->|resultados| LLM["⚡ Gemini 2.5 Flash<br/>(LLM)"]
+    
+    LLM -->|síntese| Response["📝 Resposta<br/>(fundamentada no código)"]
+    
+    Response -->|output formatado| User
+    
+    style User fill:#e3f2fd
+    style CLI fill:#e1f5fe
+    style Agent fill:#b3e5fc
+    style Skill fill:#81d4fa
+    style Decision fill:#80deea
+    style T1 fill:#4dd0e1
+    style T2 fill:#4dd0e1
+    style T3 fill:#4dd0e1
+    style T4 fill:#4dd0e1
+    style Tools fill:#80deea
+    style LLM fill:#b3e5fc
+    style Response fill:#e1f5fe
 ```
 
 ---
@@ -143,46 +113,50 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    SragAgent["srag_agent/\n.sql · .yml · .ipynb · .md"]
-    Script["scripts/build_rag_index.py\n(roda offline, uma vez)"]
-    SragAgent --> Script
-
-    subgraph Indexer["rag/indexer.py  —  build-time"]
-        direction TB
-        Chunk["Chunking semântico\nsql → 1 arquivo/chunk\nyml → 1 arquivo/chunk\nipynb → 1 célula/chunk\nmd → 1 seção ##/chunk"]
-        Embed["Embeddings\nall-MiniLM-L6-v2\n384 dims · local · sem API"]
-        Build["FAISS IndexFlatIP\n+ normalize_L2\n= cosine similarity exata"]
-        Chunk --> Embed --> Build
+    subgraph Build["⚙️ BUILD-TIME<br/>(offline, uma vez)"]
+        Repo["📁 Repositório<br/>(.sql, .yml, .ipynb, .md)"]
+        Chunk["🔪 Chunking<br/>(1 arquivo/chunk ou<br/>1 célula/seção)"]
+        Embed["📊 Embeddings<br/>(all-MiniLM-L6-v2<br/>384 dims, local)"]
+        Index["🗂️ Build FAISS Index<br/>(IndexFlatIP,<br/>cosine similarity)"]
+        
+        Repo --> Chunk --> Embed --> Index
     end
-
-    Script --> Indexer
-
-    subgraph Index["rag/index/  (gitignored)"]
-        direction TB
-        FI["srag.index\n(vetores FAISS)"]
-        MD["srag_metadata.json\ncontent · file_path · layer\nchunk_type · model_name"]
+    
+    Build -->|salva| Store["💾 rag/index/<br/>(gitignored)<br/>srag.index<br/>+ metadata.json"]
+    
+    subgraph Query["🔍 QUERY-TIME<br/>(ao usar search_codebase)"]
+        Input["❓ User Query<br/>(ex: 'como<br/>obito_flag<br/>é criada?')"]
+        
+        Semantic["Semantic Search<br/>(FAISS)"]
+        Keyword["Keyword Search<br/>(BM25)"]
+        Fusion["Rank Fusion<br/>(RRF)"]
+        Rerank["Rerank Preciso<br/>(CrossEncoder)"]
+        Result["Top-5 Chunks<br/>com source"]
+        
+        Input --> Semantic
+        Input --> Keyword
+        Semantic --> Fusion
+        Keyword --> Fusion
+        Fusion --> Rerank --> Result
     end
-
-    Indexer --> Index
-
-    Query(["query + layer\n(ex: 'como obito_srag_flag é criada'\nlayer='silver')"])
-
-    subgraph Retriever["rag/retriever.py  —  query-time"]
-        direction TB
-        SemanticSearch["🔍 FAISS Semantic Search\nencode query → normalize\n→ top-15 por cosine sim"]
-        KeywordSearch["🔑 BM25 Keyword Search\ntokenize query\n→ top-15 por BM25Okapi"]
-        RRF["🔀 Reciprocal Rank Fusion\nscore = Σ 1 ÷ (60 + rank)\nmerge → top-15 candidatos"]
-        Reranker["🎯 CrossEncoder Reranker\nms-marco-MiniLM-L-6-v2\n(query, chunk) juntos → score preciso"]
-        Top5["Top-5 chunks\ncom source attribution\n[rank] filepath · camada: layer"]
-        SemanticSearch --> RRF
-        KeywordSearch --> RRF
-        RRF --> Reranker
-        Reranker --> Top5
-    end
-
-    Index --> Retriever
-    Query --> Retriever
-    Top5 --> Agent(["🤖 Gemini 2.5 Flash\nsintetiza resposta"])
+    
+    Store -->|carrega| Query
+    Result -->|passa pro| LLM["⚡ Gemini<br/>(sintetiza<br/>resposta)"]
+    
+    style Build fill:#e3f2fd
+    style Repo fill:#e1f5fe
+    style Chunk fill:#b3e5fc
+    style Embed fill:#81d4fa
+    style Index fill:#80deea
+    style Store fill:#4dd0e1
+    style Query fill:#e3f2fd
+    style Input fill:#e1f5fe
+    style Semantic fill:#81d4fa
+    style Keyword fill:#81d4fa
+    style Fusion fill:#80deea
+    style Rerank fill:#4dd0e1
+    style Result fill:#26c6da
+    style LLM fill:#b3e5fc
 ```
 
 ---
