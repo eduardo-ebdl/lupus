@@ -4,35 +4,35 @@
     "category": "arquitetura",
     "question": "Qual e o padrao arquitetural principal do projeto SRAG?",
     "expected_keywords": ["medallion", "bronze", "silver", "gold"],
-    "expected_tools": ["get_srag_architecture"]
+    "expected_tools": ["get_project_architecture"]
   },
   {
     "id": 2,
     "category": "arquitetura",
     "question": "Quantas camadas tem a Medallion Architecture e quais sao?",
     "expected_keywords": [["3", "tres", "três", "three"], "bronze", "silver", "gold"],
-    "expected_tools": ["get_srag_architecture"]
+    "expected_tools": ["get_project_architecture"]
   },
   {
     "id": 3,
     "category": "arquitetura",
     "question": "Qual a plataforma usada pelo projeto SRAG e qual o sistema de governanca?",
     "expected_keywords": ["databricks", "unity catalog"],
-    "expected_tools": ["get_srag_architecture"]
+    "expected_tools": ["get_project_architecture"]
   },
   {
     "id": 4,
     "category": "arquitetura",
     "question": "Quais sao os 3 modulos do projeto SRAG e qual a responsabilidade de cada um?",
     "expected_keywords": ["srag_agent", "ai_agent", "pipeline"],
-    "expected_tools": ["get_srag_architecture"]
+    "expected_tools": ["get_project_architecture"]
   },
   {
     "id": 5,
     "category": "arquitetura",
     "question": "Qual a fonte de dados do projeto SRAG?",
     "expected_keywords": ["opendatasus", "sivep"],
-    "expected_tools": ["get_srag_architecture"]
+    "expected_tools": ["get_project_architecture"]
   },
   {
     "id": 6,
@@ -67,7 +67,7 @@
     "category": "modulos",
     "question": "Qual modelo LLM o ai_agent usa e onde ele esta hospedado?",
     "expected_keywords": ["llama", "3.3", "70b", "databricks"],
-    "expected_tools": ["get_agent_tools_spec", "get_srag_architecture"]
+    "expected_tools": ["get_agent_tools_spec", "get_project_architecture"]
   },
   {
     "id": 11,
@@ -81,7 +81,7 @@
     "category": "integracao",
     "question": "De quais tabelas o ai_agent puxa dados para gerar relatorios?",
     "expected_keywords": ["gold", "daily", "monthly"],
-    "expected_tools": ["get_agent_tools_spec", "get_srag_architecture"]
+    "expected_tools": ["get_agent_tools_spec", "get_project_architecture"]
   },
   {
     "id": 13,
@@ -130,7 +130,7 @@
     "category": "design",
     "question": "Como o projeto garante conformidade com a LGPD?",
     "expected_keywords": ["lgpd", "pii", "remocao", "silver"],
-    "expected_tools": ["get_srag_architecture", "analyze_dbt_model"]
+    "expected_tools": ["get_project_architecture", "analyze_dbt_model"]
   },
   {
     "id": 20,

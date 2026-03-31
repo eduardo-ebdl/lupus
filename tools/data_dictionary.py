@@ -11,30 +11,7 @@ import yaml
 from langchain.tools import tool
 
 from tools import cache as _cache
-
-
-# ---------------------------------------------------------------------------
-# Helpers de descoberta de paths
-# ---------------------------------------------------------------------------
-
-def _get_project_root() -> str:
-    """Retorna o root do projeto via ctx_manager (fonte centralizada)."""
-    from core.context_manager import get_project_path
-    return get_project_path()
-
-
-def _find_dbt_root(project_root: str) -> str | None:
-    """Encontra o diretório onde dbt_project.yml está."""
-    if os.path.exists(os.path.join(project_root, "dbt_project.yml")):
-        return project_root
-    try:
-        for name in os.listdir(project_root):
-            sub = os.path.join(project_root, name)
-            if os.path.isdir(sub) and os.path.exists(os.path.join(sub, "dbt_project.yml")):
-                return sub
-    except OSError:
-        pass
-    return None
+from tools.path_helpers import get_project_root as _get_project_root, find_dbt_root as _find_dbt_root
 
 
 def _collect_models_from_yaml(yaml_path: str, layer: str) -> list[dict]:

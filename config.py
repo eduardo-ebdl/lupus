@@ -78,7 +78,7 @@ Regras críticas:
 def make_agent(system_prompt: str = SYSTEM_PROMPT):
     """Cria uma instância do agent Lupus com todos os middlewares.
 
-    Usa SqliteSaver para persistir conversas entre sessões (~/.wolf/conversations.db).
+    Usa SqliteSaver para persistir conversas entre sessões (~/.lupus/conversations.db).
     Para conversas multi-turn, reutilize o mesmo agent com thread_ids distintos.
 
     Args:

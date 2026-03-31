@@ -17,7 +17,6 @@ from langchain.tools import tool
 logger = logging.getLogger(__name__)
 
 from core.context_manager import ctx_manager
-from tools import cache as _cache
 
 
 def _force_remove_readonly(func, path, exc_info):
@@ -131,7 +130,7 @@ def clone_repository(url: str, branch: str = "") -> str:
         }, ensure_ascii=False, indent=2)
 
     # Atualiza o repo ativo — dispara hooks (cache, RAG, middleware)
-    ctx_manager.set_repo(dest_dir, is_clone=True)
+    ctx_manager.set_repo(dest_dir)
 
     # Importa aqui para evitar circular import no módulo
     from tools.project_discovery import discover_project

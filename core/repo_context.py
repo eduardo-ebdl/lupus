@@ -18,7 +18,7 @@ class RepoContext:
 
     path: str                          # Caminho absoluto do repo ativo
     name: str = ""                     # Nome do repo (basename do path)
-    cloned_at: float | None = None     # Timestamp do clone (None = repo local)
+    cloned_at: float | None = None     # Timestamp do carregamento do repo
     rag_indexed_path: str = ""         # Path que gerou o índice RAG atual
     cache_version: int = 0             # Incrementa a cada mudança de repo
 

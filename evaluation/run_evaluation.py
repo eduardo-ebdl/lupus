@@ -11,6 +11,7 @@ import os
 import sys
 import time
 import uuid
+from datetime import datetime
 
 # Path setup — must be before project imports
 EVAL_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -246,7 +247,7 @@ overall_accuracy = accurate_count / total
 # Save results
 output = {
     "metadata": {
-        "date": "2026-03-24",
+        "date": datetime.now().isoformat(),
         "total_questions": total,
         "total_success": success_count,
         "total_time_seconds": round(total_time, 1),

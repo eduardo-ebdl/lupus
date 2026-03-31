@@ -35,7 +35,8 @@ def on_repo_change(context) -> None:
 
     Marca o índice RAG como desatualizado se o repo mudou.
     """
-    global _rag_synced
+    global _rag_synced, _retriever
+    _retriever = None
     _rag_synced = (context.path == _indexed_path)
 
 

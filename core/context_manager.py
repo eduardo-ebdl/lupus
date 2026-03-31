@@ -67,14 +67,13 @@ class ProjectContextManager:
         """Contador de mudanças de repo. Usado pelo main loop para detectar mudanças."""
         return self._repo_change_count
 
-    def set_repo(self, path: str, is_clone: bool = False) -> None:
+    def set_repo(self, path: str) -> None:
         """Atualiza o repo ativo. Dispara todos os hooks registrados.
 
         ÚNICO ponto de entrada para mudança de repo.
 
         Args:
             path: Caminho absoluto do novo repositório.
-            is_clone: True se o repo foi clonado (vs. repo local).
         """
         old_path = self._context.path if self._context else None
         self._context = RepoContext(path=path)

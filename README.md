@@ -297,16 +297,16 @@ python evaluation/run_evaluation.py
 
 ## Blocos de desenvolvimento
 
-| Bloco | Descrição | Horas |
-|---|---|---|
-| 1 | Setup: ambiente, DeepAgents, Gemini | 4h |
-| 2 | Domain Tools: 6 ferramentas de domínio | 5h |
-| 3 | Agent: integração LangGraph + middleware + sub-agents | 6h |
-| 4 | Skill + CLI: Lupus persona + chat interativo | 5h |
-| 5 | Documentação: 5 docs gerados automaticamente | 3h |
-| 6 | Avaliação: 25 perguntas, 3 níveis de métricas, 96% accuracy | 4h |
-| 7 | Polish: README, requirements, organização, git | 2h |
-| 8 | RAG: hybrid search (FAISS + BM25 + RRF), embeddings locais | 5h |
+| Bloco | Descrição|
+|---|---|
+| 1 | Setup: ambiente, DeepAgents, Gemini |
+| 2 | Domain Tools: 6 ferramentas de domínio |
+| 3 | Agent: integração LangGraph + middleware + sub-agents |
+| 4 | Skill + CLI: Lupus persona + chat interativo |
+| 5 | Documentação: 5 docs gerados automaticamente |
+| 6 | Avaliação: 25 perguntas, 3 níveis de métricas, 96% accuracy |
+| 7 | Polish: README, requirements, organização, git |
+| 8 | RAG: hybrid search (FAISS + BM25 + RRF), embeddings locais |
 
 ## Licença
 

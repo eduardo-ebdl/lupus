@@ -18,7 +18,6 @@ from rich.text import Text
 
 from config import make_agent
 from core.context_manager import ctx_manager
-from feedback.feedback_store import log_report, search_similar, build_few_shot_prefix, generate_suggested_fix
 
 console = Console()
 
@@ -359,38 +358,9 @@ def chat():
             ))
             continue
 
-        if cmd.startswith("/reportar"):
-            if _last_turn is None:
-                console.print("[dim]Nenhuma resposta anterior para reportar.[/dim]\n")
-                continue
-            comment = user_input.strip()[len("/reportar"):].strip() or None
-            with console.status("[dim]analisando...[/dim]", spinner="dots"):
-                suggested_fix = generate_suggested_fix(
-                    question=_last_turn["question"],
-                    response=_last_turn["response"],
-                    comment=comment,
-                )
-            log_report(
-                question=_last_turn["question"],
-                response=_last_turn["response"],
-                tools_used=_last_turn["tools_used"],
-                thread_id=thread_id,
-                comment=comment,
-                suggested_fix=suggested_fix,
-            )
-            console.print("[green]✓ Report registrado.[/green]\n")
-            continue
-
-        # Few-shot RAG: injeta contexto de reports similares antes de enviar ao agente
-        similar = search_similar(user_input)
-        prefix = build_few_shot_prefix(similar)
-        augmented_input = prefix + user_input if prefix else user_input
-
         console.print()
         turn_counter += 1
-        response, tool_calls = _run_with_streaming(agent, augmented_input, config, turn=turn_counter)
-
-        console.print("[dim]  Resposta incorreta? /reportar[/dim]")
+        response, tool_calls = _run_with_streaming(agent, user_input, config, turn=turn_counter)
 
         # Salva turno para eventual /reportar
         _last_turn = {
