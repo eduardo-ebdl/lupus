@@ -34,6 +34,24 @@ if not os.getenv("GOOGLE_API_KEY"):
 # está definido no .env. Nenhum código adicional necessário — o load_dotenv() acima
 # injeta as variáveis e o LangChain detecta. Ver .env.example para configuração.
 
+# Contexto máximo por análise (bytes) — configurável via env var LUPUS_MAX_CONTEXT_BYTES
+# Padrão: 8000 bytes (8 KB). Aumentar para análises maiores, mas cuidado com timeouts.
+try:
+    _MAX_CONTEXT_BYTES_STR = os.getenv("LUPUS_MAX_CONTEXT_BYTES", "8000")
+    MAX_CONTEXT_BYTES = int(_MAX_CONTEXT_BYTES_STR)
+    if MAX_CONTEXT_BYTES > 50000:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            f"MAX_CONTEXT_BYTES={MAX_CONTEXT_BYTES} é muito alto (>50KB). "
+            "Análises podem ficar lentas ou causar timeout. Recomendado: ≤20KB."
+        )
+except (ValueError, TypeError):
+    MAX_CONTEXT_BYTES = 8000
+    import logging as _logging
+    _logging.getLogger(__name__).warning(
+        f"LUPUS_MAX_CONTEXT_BYTES inválido: '{_MAX_CONTEXT_BYTES_STR}'. Usando padrão: 8000 bytes."
+    )
+
 # Diretório raiz do projeto (onde este arquivo está)
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 

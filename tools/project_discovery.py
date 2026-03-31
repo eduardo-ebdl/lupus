@@ -91,12 +91,14 @@ def _detect_python_framework(root: str) -> str | None:
         return "Django"
 
     # FastAPI / Flask: checa imports em app.py ou main.py
+    from config import MAX_CONTEXT_BYTES
+    max_read = max(2000, MAX_CONTEXT_BYTES // 4)  # 1/4 do limite, mínimo 2KB
     for entry_file in ("app.py", "main.py", "server.py", "wsgi.py", "asgi.py"):
         candidate = os.path.join(root, entry_file)
         if os.path.isfile(candidate):
             try:
                 with open(candidate, encoding="utf-8", errors="ignore") as f:
-                    content = f.read(2000)
+                    content = f.read(max_read)
                 if "fastapi" in content.lower():
                     return "FastAPI"
                 if "flask" in content.lower():
@@ -109,6 +111,8 @@ def _detect_python_framework(root: str) -> str | None:
 
 def _detect_kubernetes(root: str) -> bool:
     """Detecta manifests Kubernetes (YAML com kind: Deployment/Service/etc.)."""
+    from config import MAX_CONTEXT_BYTES
+    max_read = max(500, MAX_CONTEXT_BYTES // 16)  # 1/16 do limite, mínimo 500B
     k8s_kinds = {
         "Deployment", "Service", "Pod", "StatefulSet", "DaemonSet",
         "Ingress", "ConfigMap", "Secret", "Namespace", "Job",
@@ -121,7 +125,7 @@ def _detect_kubernetes(root: str) -> bool:
             fpath = os.path.join(dirpath, fname)
             try:
                 with open(fpath, encoding="utf-8", errors="ignore") as f:
-                    content = f.read(500)
+                    content = f.read(max_read)
                 if any(f"kind: {k}" in content for k in k8s_kinds):
                     return True
             except OSError:

@@ -410,6 +410,26 @@ Saída: Repositório clonado e carregado.
 | 2 | URL fornecida via chat | Sobrescreve PROJECT_PATH durante sessão |
 | 3 | Padrão | `./srag_agent` (se nenhuma configuração) |
 
+### Limite de Contexto por Análise
+
+O Lupus limita o tamanho de arquivo lido em cada análise para evitar timeouts e excesso de uso de tokens. Padrão: **8000 bytes (8 KB)**.
+
+Configure via variável de ambiente:
+```bash
+# Aumentar para análises maiores (ex: 20KB)
+export LUPUS_MAX_CONTEXT_BYTES=20000
+
+# Após definir, execute novamente
+python main.py
+```
+
+**Trade-offs:**
+| Limite | Vantagem | Desvantagem |
+|--------|----------|------------|
+| 8 KB (padrão) | ✓ Rápido, confiável | ✗ Contexto limitado |
+| 16 KB | ✓ Mais contexto | ✗ Pode lentificar |
+| 20+ KB | ✓ Análises maiores | ✗ Alto risco de timeout (>50KB gera warning) |
+
 ---
 
 ## Avaliação

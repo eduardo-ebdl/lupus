@@ -47,8 +47,9 @@ def _scan_secrets(project_root: str, files: list[dict]) -> list[dict]:
 
         fpath = os.path.join(project_root, entry["path"])
         try:
+            from config import MAX_CONTEXT_BYTES
             with open(fpath, encoding="utf-8", errors="ignore") as f:
-                content = f.read(8000)  # lê no máximo 8 KB
+                content = f.read(MAX_CONTEXT_BYTES)  # lê no máximo MAX_CONTEXT_BYTES (env: LUPUS_MAX_CONTEXT_BYTES)
         except OSError:
             continue
 
