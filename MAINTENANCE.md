@@ -145,12 +145,33 @@ metadata:
 → Sem problema — ambas mudanças devem ser mergeadas
 → Rode validação após merge para confirmar consistência
 
+## Troubleshooting de Desenvolvimento
+
+### venv prompt mostrando `((venv) )` com espaçamento ruim
+
+**Causa:** Arquivo `venv/Scripts/activate` tem parênteses extras na linha 70.
+
+**Solução:** Edite `venv/Scripts/activate` linha 70:
+```bash
+# ❌ Incorreto:
+PS1="("'(venv) '") ${PS1:-}"
+
+# ✅ Correto:
+PS1="${VIRTUAL_ENV_PROMPT}${PS1:-}"
+```
+
+Depois reative: `deactivate && source venv/Scripts/activate`
+
+**Por que não está em git:** `venv/` é gerado localmente e está em `.gitignore`. 
+Se problema persistir após recriar venv, o arquivo foi corrompido durante criação.
+
 ## Próximas Melhorias
 
 - [ ] Adicionar pre-commit hook que roda `validate_skill_consistency.py`
 - [ ] GitHub Actions: validação em PRs automaticamente
 - [ ] Gerar changelog automático quando `metadata.version` muda
 - [ ] Documentar exemplos de persona em diferentes linguagens
+- [ ] Template de venv com `activate` pre-corrigido
 
 ---
 
