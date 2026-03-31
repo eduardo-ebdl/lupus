@@ -48,12 +48,32 @@ ctx_manager.register_hook(_cache_on_repo_change)
 ctx_manager.register_hook(_rag_on_repo_change)
 
 # Persistência de conversas via SQLite (sobrevive a reinícios do processo)
+# Nota: _checkpointer é criado globalmente apenas para compatibilidade com main.py
+# Novos usos de make_agent() devem injetar checkpointer explicitamente
 _DB_DIR = os.path.join(os.path.expanduser("~"), ".lupus")
-os.makedirs(_DB_DIR, exist_ok=True)
 _DB_PATH = os.path.join(_DB_DIR, "conversations.db")
-_db_conn = sqlite3.connect(_DB_PATH, check_same_thread=False)
-atexit.register(_db_conn.close)
-_checkpointer = SqliteSaver(conn=_db_conn)
+_db_conn = None
+_checkpointer = None
+
+
+def get_checkpointer():
+    """Obtém ou cria o checkpointer SQLite global.
+
+    Lazy initialization: a conexão é criada apenas quando get_checkpointer() é chamado.
+    Isso permite testes injetar mock checkpointers sem poluir o filesystem.
+
+    Returns:
+        SqliteSaver: Instância de checkpointer SQLite para persistência de conversas.
+    """
+    global _db_conn, _checkpointer
+
+    if _checkpointer is None:
+        os.makedirs(_DB_DIR, exist_ok=True)
+        _db_conn = sqlite3.connect(_DB_PATH, check_same_thread=False)
+        atexit.register(_db_conn.close)
+        _checkpointer = SqliteSaver(conn=_db_conn)
+
+    return _checkpointer
 
 # System prompt canônico — usado por main.py, testes e avaliação
 # NOTA: Este prompt deve estar em sync com skills/lupus/SKILL.md
@@ -81,15 +101,24 @@ Regras críticas:
 - Responda em português brasileiro."""
 
 
-def make_agent(system_prompt: str = SYSTEM_PROMPT):
+def make_agent(system_prompt: str = SYSTEM_PROMPT, checkpointer=None):
     """Cria uma instância do agent Lupus com todos os middlewares.
 
-    Usa SqliteSaver para persistir conversas entre sessões (~/.lupus/conversations.db).
+    Por padrão usa SqliteSaver para persistir conversas entre sessões (~/.lupus/conversations.db).
     Para conversas multi-turn, reutilize o mesmo agent com thread_ids distintos.
 
     Args:
         system_prompt: System prompt a usar. Padrão: SYSTEM_PROMPT canônico.
+        checkpointer: Instância de checkpointer (ex: SqliteSaver ou MockCheckpointer).
+                     Se None, usa get_checkpointer() para obter a instância global.
+                     Testes devem injetar MockCheckpointer aqui para evitar I/O de filesystem.
+
+    Returns:
+        Agent: Instância do agente LangGraph com middlewares configurados.
     """
+    if checkpointer is None:
+        checkpointer = get_checkpointer()
+
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
     # Lê path do ctx_manager (atualizado automaticamente por clone_repository)
@@ -113,5 +142,5 @@ def make_agent(system_prompt: str = SYSTEM_PROMPT):
             MemoryMiddleware(backend=lupus_backend, sources=["AGENTS.md"]),
             SkillsMiddleware(backend=skills_backend, sources=["./lupus/"]),
         ],
-        checkpointer=_checkpointer,
+        checkpointer=checkpointer,
     )
