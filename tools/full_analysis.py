@@ -81,7 +81,7 @@ def analyze_full_repository(url: str, branch: str = "") -> str:
 
     file_contents: dict[str, str] = {}
     total_chars = 0
-    max_total_chars = 15_000  # Gemini repete conteúdo com contexto muito grande — 15K é o limite seguro testado
+    max_total_chars = 8_000  # Reduzido para evitar streaming infinito — 8K é seguro para deepagents
 
     # Prioriza key files, depois código
     key_files = explore_data.get("key_files", [])
@@ -91,7 +91,7 @@ def analyze_full_repository(url: str, branch: str = "") -> str:
     for fpath in ordered_files:
         if total_chars >= max_total_chars:
             break
-        content = _read_file_safe(project_root, fpath)
+        content = _read_file_safe(project_root, fpath, max_chars=1500)  # Reduzido para 1500 chars por arquivo
         if content:
             file_contents[fpath] = content
             total_chars += len(content)
