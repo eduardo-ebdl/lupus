@@ -67,19 +67,19 @@ A documentação gerada é salva automaticamente no diretório do projeto analis
 
 ```mermaid
 flowchart TD
-    User(["User"])
-    User -->|query| CLI
+    User(["Usuário"])
+    User -->|pergunta| CLI
 
-    subgraph CLI["CLI Interface (main.py)"]
-        IO["Input/Output via Rich"]
+    subgraph CLI["Interface CLI (main.py)"]
+        IO["Entrada/Saída via Rich"]
     end
 
-    CLI -->|invoke| Agent
+    CLI -->|invoca| Agent
 
-    subgraph Agent["Agent (LangGraph + config.py)"]
+    subgraph Agent["Agente (LangGraph + config.py)"]
         direction TB
 
-        subgraph MW["Middleware Stack"]
+        subgraph MW["Stack de Middleware"]
             direction LR
             SK["SkillsMiddleware (SKILL.md)"]
             ME["MemoryMiddleware (AGENTS.md)"]
@@ -89,10 +89,10 @@ flowchart TD
         end
 
         LLM["Gemini 2.5 Flash LLM"]
-        MW -->|enriched context| LLM
+        MW -->|contexto enriquecido| LLM
     end
 
-    LLM -->|tool invocation| Tools
+    LLM -->|invocação de tool| Tools
 
     subgraph Tools["Tools (17 total)"]
         direction LR
@@ -106,7 +106,7 @@ flowchart TD
             D5["analyze_full_repository"]
         end
 
-        subgraph DT["Domain Analysis (7)"]
+        subgraph DT["Análise de Domínio (7)"]
             direction TB
             T1["get_project_architecture"]
             T2["analyze_dbt_model"]
@@ -117,7 +117,7 @@ flowchart TD
             T7["map_code_dependencies"]
         end
 
-        subgraph SA["Sub-agents (4)"]
+        subgraph SA["Sub-agentes (4)"]
             direction TB
             S1["analyze_code"]
             S2["generate_documentation"]
@@ -130,11 +130,11 @@ flowchart TD
         end
     end
 
-    Tools -->|results| LLM
-    LLM -->|response| CLI
-    CLI -->|formatted output| User
+    Tools -->|resultados| LLM
+    LLM -->|resposta| CLI
+    CLI -->|output formatado| User
 
-    Agent -.->|optional tracing| LS["LangSmith (LANGCHAIN_TRACING_V2=true)"]
+    Agent -.->|rastreamento opcional| LS["LangSmith (LANGCHAIN_TRACING_V2=true)"]
 ```
 
 ---
@@ -208,140 +208,140 @@ flowchart LR
 | "Quais melhorias você sugere pro projeto?" | `suggest_improvements` |
 | "Como `obito_srag_flag` é criada no SQL?" | `search_codebase` |
 
-## Technology Stack
+## Stack Tecnológico
 
-| Component | Technology | Rationale |
+| Componente | Tecnologia | Justificativa |
 |-----------|-----------|-----------|
-| Agent Framework | DeepAgents (LangChain + LangGraph) | Stateful conversation memory with pluggable middleware |
-| LLM | Gemini 2.5 Flash | Low latency, cost-effective, strong tool-calling capability |
-| Semantic Search | FAISS (local) + BM25 + RRF + CrossEncoder | Hybrid search pipeline, no external API, data remains local |
-| CLI Framework | Rich | Structured output formatting (markdown, panels, progress indicators) |
-| Persona System | SKILL.md + SkillsMiddleware | Context-aware instructions, consistent behavior |
-| Conversation Persistence | SQLite | Multi-turn session memory with checkpoint support |
-| Observability | LangSmith (optional) | Automatic tracing, tool invocation logging |
-| Reference Project | SRAG | Real-world data pipeline (Databricks + dbt + LLM agent) |
+| Framework de Agentes | DeepAgents (LangChain + LangGraph) | Memória de conversa com estado e middleware plugável |
+| LLM | Gemini 2.5 Flash | Baixa latência, custo-efetivo, forte em tool-calling |
+| Busca Semântica | FAISS (local) + BM25 + RRF + CrossEncoder | Pipeline híbrido, sem API externa, dados locais |
+| Framework CLI | Rich | Formatação estruturada de output (markdown, painéis, indicadores) |
+| Sistema de Persona | SKILL.md + SkillsMiddleware | Instruções contextualizadas, comportamento consistente |
+| Persistência de Conversas | SQLite | Memória multi-turn com suporte a checkpoint |
+| Observabilidade | LangSmith (opcional) | Rastreamento automático, logging de invocação |
+| Projeto de Referência | SRAG | Pipeline de dados real (Databricks + dbt + agente LLM) |
 
-### Design Decisions
+### Decisões de Design
 
-- **Local semantic search**: FAISS operates offline without external APIs. Sensitive repository data does not leave the user's machine.
-- **Real-time context**: Tools read actual files from the project; no reliance on training data cutoff dates.
-- **Modular architecture**: Each tool is independently deployable and testable.
-- **Self-documenting**: The agent generates documentation describing the analyzed repository.
+- **Busca semântica local**: FAISS opera offline sem APIs externas. Dados sensíveis do repositório não saem da máquina do usuário.
+- **Contexto em tempo real**: As ferramentas consultam arquivos reais do projeto; sem dependência de datas de treinamento.
+- **Arquitetura modular**: Cada ferramenta é independentemente implantável e testável.
+- **Auto-documentação**: O agente gera documentação descrevendo o repositório analisado.
 
-## Project Structure
+## Estrutura do Projeto
 
 ```
 lupus/
-├── Entry Points
-│   ├── main.py                    # CLI interface
-│   ├── config.py                  # Central configuration (LLM, tools, middleware)
-│   └── .env.example               # Environment template
+├── Pontos de Entrada
+│   ├── main.py                    # Interface CLI
+│   ├── config.py                  # Configuração central (LLM, ferramentas, middleware)
+│   └── .env.example               # Template de variáveis de ambiente
 │
-├── Core Agent
+├── Agente Principal
 │   ├── core/
-│   │   ├── context_manager.py     # Repository context state and hook management
-│   │   └── repo_context.py        # Repository metadata (path, cache version, RAG sync)
-│   └── skills/lupus/SKILL.md      # Persona definition and behavior constraints
+│   │   ├── context_manager.py     # Gerenciamento de estado e hooks de contexto
+│   │   └── repo_context.py        # Metadados de repositório (caminho, cache, RAG sync)
+│   └── skills/lupus/SKILL.md      # Definição de persona e restrições de comportamento
 │
-├── Tools (17 total)
-│   ├── tools/__init__.py          # Tool registry and exports
+├── Ferramentas (17 total)
+│   ├── tools/__init__.py          # Registro e exportação de ferramentas
 │   │
-│   ├── Discovery Tools (5)
-│   │   ├── project_discovery.py   # Stack detection
-│   │   ├── repository_explorer.py # File structure enumeration
-│   │   ├── data_file_reader.py    # Structured data parsing
-│   │   ├── github_integration.py  # Repository cloning
-│   │   └── full_analysis.py       # Combined discovery pipeline
+│   ├── Ferramentas de Discovery (5)
+│   │   ├── project_discovery.py   # Detecção de stack
+│   │   ├── repository_explorer.py # Enumeração de estrutura de arquivos
+│   │   ├── data_file_reader.py    # Análise de dados estruturados
+│   │   ├── github_integration.py  # Clonagem de repositórios
+│   │   └── full_analysis.py       # Pipeline de discovery combinado
 │   │
-│   ├── Domain Tools (7)
-│   │   ├── architecture.py        # Architecture analysis
-│   │   ├── dbt_analyzer.py        # dbt model analysis
-│   │   ├── lineage.py             # Data lineage tracing
-│   │   ├── pipeline_analyzer.py   # Pipeline configuration analysis
-│   │   ├── data_dictionary.py     # Schema extraction
-│   │   ├── code_dependencies.py   # Dependency graph analysis
-│   │   └── agent_analyzer.py      # Agent specification
+│   ├── Ferramentas de Domínio (7)
+│   │   ├── architecture.py        # Análise de arquitetura
+│   │   ├── dbt_analyzer.py        # Análise de modelos dbt
+│   │   ├── lineage.py             # Rastreamento de linhagem de dados
+│   │   ├── pipeline_analyzer.py   # Análise de configuração de pipelines
+│   │   ├── data_dictionary.py     # Extração de schema
+│   │   ├── code_dependencies.py   # Análise de grafo de dependências
+│   │   └── agent_analyzer.py      # Especificação de agentes
 │   │
-│   ├── Sub-agents (4)
+│   ├── Sub-agentes (4)
 │   │   └── subagents.py           # analyze_code, generate_documentation, review, suggest
 │   │
-│   ├── RAG Tools (1)
-│   │   └── rag_search.py          # Semantic search
+│   ├── Ferramentas RAG (1)
+│   │   └── rag_search.py          # Busca semântica
 │   │
-│   └── Utilities
-│       ├── cache.py               # LRU cache with TTL
-│       └── path_helpers.py        # Path resolution utilities
+│   └── Utilitários
+│       ├── cache.py               # Cache com TTL
+│       └── path_helpers.py        # Utilitários de resolução de caminho
 │
-├── RAG Module
+├── Módulo RAG
 │   ├── rag/
-│   │   ├── indexer.py             # Semantic chunking + FAISS index builder
-│   │   ├── retriever.py           # Hybrid search + CrossEncoder reranking
-│   │   └── index/                 # Generated indices (gitignored)
+│   │   ├── indexer.py             # Chunking semântico + builder de índice FAISS
+│   │   ├── retriever.py           # Busca híbrida + reranking com CrossEncoder
+│   │   └── index/                 # Índices gerados (gitignored)
 │
-├── Testing & Evaluation
-│   ├── tests/                     # Integration tests
+├── Testes e Avaliação
+│   ├── tests/                     # Testes de integração
 │   ├── evaluation/
-│   │   ├── dataset.json           # Test dataset (25 questions)
-│   │   └── run_evaluation.py      # Evaluation harness with LLM judge
+│   │   ├── dataset.json           # Dataset de teste (25 perguntas)
+│   │   └── run_evaluation.py      # Harness de avaliação com LLM como juiz
 │   └── scripts/
-│       ├── build_rag_index.py     # RAG index builder
-│       └── generate_docs.py       # Documentation generator
+│       ├── build_rag_index.py     # Builder de índice RAG
+│       └── generate_docs.py       # Gerador de documentação
 │
-├── Documentation
-│   ├── docs/                      # Development documentation
+├── Documentação
+│   ├── docs/                      # Documentação de desenvolvimento
 │   ├── README.md
-│   └── AGENTS.md                  # Agent context and guidelines
+│   └── AGENTS.md                  # Contexto e diretrizes do agente
 │
-└── Reference Project
-    └── srag_agent/                # Sample project (Databricks + dbt + LLM)
+└── Projeto de Referência
+    └── srag_agent/                # Projeto exemplo (Databricks + dbt + LLM)
 ```
 
-### Data Flow
+### Fluxo de Dados
 
 ```
-Input Query (main.py)
+Query de Entrada (main.py)
          ↓
-    config.make_agent() → LangGraph Executor
+    config.make_agent() → Executor LangGraph
          ↓
-    Middleware Stack (Skills, Memory, Filesystem)
+    Stack de Middleware (Skills, Memory, Filesystem)
          ↓
-    Gemini 2.5 Flash (LLM reasoning + tool selection)
+    Gemini 2.5 Flash (raciocínio + seleção de ferramentas)
          ↓
-    Tool Invocation (discovery, domain, RAG, sub-agents)
+    Invocação de Ferramentas (discovery, domínio, RAG, sub-agentes)
          ↓
-    File I/O + Semantic Search (RAG pipeline)
+    I/O de Arquivo + Busca Semântica (pipeline RAG)
          ↓
-    LLM Response Synthesis
+    Síntese de Resposta do LLM
          ↓
-    Rich CLI Output Formatting
+    Formatação de Output via Rich CLI
          ↓
-    User Output
+    Output do Usuário
 ```
 
 ## Setup
 
 ```bash
-# 1. Clone repository
+# 1. Clonar repositório
 git clone https://github.com/seu-usuario/lupus.git
 cd lupus
 
-# 2. Create virtual environment
+# 2. Criar ambiente virtual
 python -m venv venv
 source venv/bin/activate  # Linux/macOS
 # ou: venv\Scripts\activate  # Windows
 
-# 3. Install dependencies
+# 3. Instalar dependências
 pip install -r requirements.txt
 
-# 4. Configure environment
+# 4. Configurar ambiente
 cp .env.example .env
-# REQUIRED: Set GOOGLE_API_KEY from https://aistudio.google.com/app/apikey
-# OPTIONAL: Set PROJECT_PATH to specify target repository
+# OBRIGATÓRIO: Configure GOOGLE_API_KEY de https://aistudio.google.com/app/apikey
+# OPCIONAL: Configure PROJECT_PATH para especificar o repositório alvo
 
-# 5. Build RAG index (first time only, ~2 minutes)
+# 5. Build do índice RAG (primeira vez apenas, ~2 minutos)
 python scripts/build_rag_index.py
 
-# 6. Start agent
+# 6. Iniciar agente
 python main.py
 ```
 
@@ -350,9 +350,9 @@ python main.py
 Após iniciar, o agente deve estar pronto para receber consultas. Exemplos de primeira entrada:
 
 ```
-"What is the project architecture?"
-"Identify technologies used"
-"Analyze https://github.com/dbt-labs/jaffle_shop"
+"Qual a arquitetura do projeto?"
+"Identifique as tecnologias usadas"
+"Analisa https://github.com/dbt-labs/jaffle_shop"
 ```
 
 ---
@@ -385,23 +385,23 @@ Todas as ferramentas operarão sobre o repositório especificado até uma nova c
 Durante a execução, o usuário pode fornecer uma URL de repositório GitHub. A ferramenta `clone_repository` realiza o clone e atualiza automaticamente o contexto de análise sem necessidade de restart:
 
 ```
-Input: "Analyze repository https://github.com/dbt-labs/jaffle_shop"
+Entrada: "Analisa o repositório https://github.com/dbt-labs/jaffle_shop"
 
-Output: Repository cloned successfully. PROJECT_PATH updated. 
-        All tools now operate on jaffle_shop.
+Saída: Repositório clonado com sucesso. PROJECT_PATH atualizado. 
+       Todas as ferramentas agora operam em jaffle_shop.
 ```
 
 Exemplos de repositórios para teste:
-- `https://github.com/dbt-labs/jaffle_shop` (dbt reference project)
-- `https://github.com/apache/airflow` (orchestration framework)
+- `https://github.com/dbt-labs/jaffle_shop` (projeto de referência dbt)
+- `https://github.com/apache/airflow` (framework de orquestração)
 
 ### Método 3: Troca de contexto durante sessão
 
 Forneça uma URL diferente para mudar o repositório em análise:
 
 ```
-Input: "Switch to https://github.com/apache/airflow"
-Output: Repository cloned and loaded.
+Entrada: "Muda para https://github.com/apache/airflow"
+Saída: Repositório clonado e carregado.
 ```
 
 ### Precedência de Configuração
@@ -414,90 +414,79 @@ Output: Repository cloned and loaded.
 
 ---
 
-## Evaluation
+## Avaliação
 
-The agent was evaluated on 25 technical questions across 5 categories using a test dataset with LLM-as-judge scoring.
+O agente foi avaliado em 25 perguntas técnicas em 5 categorias usando um dataset de teste com scoring de LLM como juiz.
 
-### Overall Metrics
+### Métricas Gerais
 
-| Metric | Value |
+| Métrica | Valor |
 |--------|-------|
-| Accuracy | 96% (24/25) |
-| Keyword Match | 85% |
-| Tool Coverage | 82% |
-| Completeness (judge) | 4.8/5.0 |
-| Relevance | 5.0/5.0 |
-| Grounding | 5.0/5.0 |
+| Acurácia | 96% (24/25) |
+| Correspondência de Keywords | 85% |
+| Cobertura de Ferramentas | 82% |
+| Completude (juiz) | 4.8/5.0 |
+| Relevância | 5.0/5.0 |
+| Fundamentação | 5.0/5.0 |
 
-### Category Breakdown
+### Análise por Categoria
 
-| Category | Accuracy | Tool Coverage | Completeness |
+| Categoria | Acurácia | Cobertura | Completude |
 |----------|----------|----------------|--------------|
-| Architecture | 100% | 100% | 5.0 |
-| Modules | 82% | 80% | 5.0 |
-| Integration | 88% | 50% | 5.0 |
+| Arquitetura | 100% | 100% | 5.0 |
+| Módulos | 82% | 80% | 5.0 |
+| Integração | 88% | 50% | 5.0 |
 | Design | 81% | 80% | 4.8 |
 | RAG | 76% | 100% | 4.4 |
 
-### Run Evaluation
+### Executar Avaliação
 
 ```bash
 python evaluation/run_evaluation.py
 ```
 
-Results are written to `evaluation/results.json`.
-
-## Blocos de desenvolvimento
-
-| Bloco | Descrição|
-|---|---|
-| 1 | Setup: ambiente, DeepAgents, Gemini |
-| 2 | Domain Tools: 6 ferramentas de domínio |
-| 3 | Agent: integração LangGraph + middleware + sub-agents |
-| 4 | Skill + CLI: Lupus persona + chat interativo |
-| 5 | Documentação: 5 docs gerados automaticamente |
-| 6 | Avaliação: 25 perguntas, 3 níveis de métricas, 96% accuracy |
-| 7 | Polish: README, requirements, organização, git |
-| 8 | RAG: hybrid search (FAISS + BM25 + RRF), embeddings locais |
-
-## Motivation and Approach
-
-Repository analysis at scale presents challenges:
-- Documentation quickly diverges from implementation
-- Onboarding requires extensive time investment
-- Complex architectures demand precise, real-time understanding
-
-Lupus addresses these through:
-- **Grounded responses**: All answers derive from actual repository code
-- **No external APIs**: Local semantic search preserves data privacy
-- **Automatic documentation**: Generates current, accurate technical documentation
-- **Stack agnostic**: Operates on dbt, Python, Node.js, Terraform, Kubernetes, etc.
-- **Extensible architecture**: Tools are modular and independently testable
-- **Empirically validated**: 96% accuracy on technical question dataset
+Os resultados são escritos em `evaluation/results.json`.
 
 ---
 
-## Blocks of Development
+## Motivação e Abordagem
 
-| Block | Description |
-|-------|-------------|
-| 1 | Environment setup, DeepAgents, Gemini integration |
-| 2 | Discovery tools (stack detection, exploration) |
-| 3 | Domain tools and agent orchestration |
-| 4 | Persona (SKILL.md), CLI interface |
-| 5 | Documentation generation |
-| 6 | Quantitative evaluation (25 questions, LLM-as-judge) |
-| 7 | Polish (README, requirements, organization) |
-| 8 | RAG pipeline (FAISS + BM25 + RRF + CrossEncoder) |
+Análise de repositórios em escala apresenta desafios:
+- Documentação diverge rapidamente da implementação
+- Onboarding requer grande investimento de tempo
+- Arquiteturas complexas demandam compreensão precisa e em tempo real
+
+Lupus aborda esses desafios através de:
+- **Respostas fundamentadas**: Todas as respostas derivam do código real do repositório
+- **Sem APIs externas**: Busca semântica local preserva privacidade de dados
+- **Documentação automática**: Gera documentação técnica atual e precisa
+- **Agnóstico a stack**: Opera com dbt, Python, Node.js, Terraform, Kubernetes, etc.
+- **Arquitetura extensível**: Ferramentas são modulares e independentemente testáveis
+- **Validado empiricamente**: 96% de acurácia em dataset de perguntas técnicas
 
 ---
 
-## License
+## Blocos de Desenvolvimento
 
-Academic project for educational and research purposes.
+| Bloco | Descrição |
+|-------|-----------|
+| 1 | Setup de ambiente, DeepAgents, integração Gemini |
+| 2 | Ferramentas de discovery (detecção de stack, exploração) |
+| 3 | Ferramentas de domínio e orquestração de agentes |
+| 4 | Persona (SKILL.md), interface CLI |
+| 5 | Geração de documentação |
+| 6 | Avaliação quantitativa (25 perguntas, LLM como juiz) |
+| 7 | Polish (README, requirements, organização) |
+| 8 | Pipeline RAG (FAISS + BM25 + RRF + CrossEncoder) |
 
-**Technology:**
+---
+
+## Licença
+
+Projeto acadêmico para fins educacionais e de pesquisa.
+
+**Tecnologias:**
 - Gemini 2.5 Flash (LLM)
-- DeepAgents / LangChain / LangGraph (agent framework)
-- FAISS + BM25 (local semantic search)
-- LangSmith (optional observability)
+- DeepAgents / LangChain / LangGraph (framework de agentes)
+- FAISS + BM25 (busca semântica local)
+- LangSmith (observabilidade opcional)
