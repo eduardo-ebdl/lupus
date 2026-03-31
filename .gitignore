@@ -7,7 +7,7 @@ venv/
 
 # Environment
 .env
-
+.claude/
 # IDE
 .vscode/
 .idea/
