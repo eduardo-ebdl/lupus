@@ -99,7 +99,7 @@ def _print_banner(repo_name: str):
         Panel(
             f"[bold white]Lupus[/bold white] — AI Code Intelligence Agent\n"
             f"[dim]Repositório: [cyan]{repo_name}[/cyan][/dim]\n\n"
-            f"[dim italic]Comandos: /export · /limpar · /repo [url] · /status · /reportar · sair[/dim italic]",
+            f"[dim italic]Digite [bold]/comandos[/bold] para ver todas as opções · ou [bold]sair[/bold][/dim italic]",
             border_style="bright_yellow",
             title="[bold yellow]Lupus[/bold yellow]",
             title_align="left",
@@ -302,6 +302,37 @@ def chat():
         if cmd in ("sair", "exit", "quit", "/sair", "/exit", "/quit"):
             console.print("\n[bold yellow]Até mais.[/bold yellow]\n")
             break
+
+        if cmd == "/comandos" or cmd == "/help":
+            console.print(Panel(
+                "[bold cyan]/repo [URL][/bold cyan]\n"
+                "Clona um repositório GitHub para análise\n"
+                "[dim]Ex: /repo https://github.com/user/repo[/dim]\n\n"
+
+                "[bold cyan]/status[/bold cyan]\n"
+                "Mostra informações do repositório ativo\n"
+                "[dim]RAG sync, cache, path, etc[/dim]\n\n"
+
+                "[bold cyan]/export[/bold cyan]\n"
+                "Exporta a conversa como arquivo Markdown\n"
+                "[dim]Salvo em: ./exports/conversa_TIMESTAMP.md[/dim]\n\n"
+
+                "[bold cyan]/limpar[/bold cyan]\n"
+                "Limpa o histórico e inicia nova conversa\n"
+                "[dim]Mantém o repositório ativo[/dim]\n\n"
+
+                "[bold cyan]/reportar[/bold cyan]\n"
+                "Reporta um problema com a última resposta\n"
+                "[dim]Feedback para melhorar o Lupus[/dim]\n\n"
+
+                "[bold cyan]sair[/bold cyan]\n"
+                "Encerra a sessão",
+                title="📚 Comandos Disponíveis",
+                border_style="cyan",
+                padding=(1, 2),
+            ))
+            console.print()
+            continue
 
         if cmd in ("/exportar", "/export"):
             path = _export_conversation(agent, thread_id)
