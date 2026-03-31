@@ -189,6 +189,7 @@ class Retriever:
         self._model = model
         self._reranker = reranker
         self._repo_id = repo_id
+        self.repo_path: str | None = None  # definido em load() com base nos metadados
 
         # BM25 construído sobre todos os chunks no carregamento
         corpus = [_tokenize(c["content"]) for c in chunks]
@@ -216,17 +217,21 @@ class Retriever:
             data = json.load(f)
 
         # Compatibilidade com metadados antigos (chunks como array direto)
-        # vs novos (chunks como dicionário com repo_id)
+        # vs novos (chunks como dicionário com repo_id e repo_path)
         if isinstance(data, list):
             chunks = data
             repo_id = None
+            repo_path_saved = None
         else:
             chunks = data.get("chunks", [])
             repo_id = data.get("repo_id")
+            repo_path_saved = data.get("repo_path")
 
         model = _load_sentence_transformer(model_name)
         reranker = _load_cross_encoder(reranker_name)
-        return cls(index, chunks, model, reranker, repo_id=repo_id)
+        instance = cls(index, chunks, model, reranker, repo_id=repo_id)
+        instance.repo_path = repo_path_saved
+        return instance
 
     def is_synced(self, current_path: str) -> bool:
         """Verifica se o índice foi construído para o repositório atual.

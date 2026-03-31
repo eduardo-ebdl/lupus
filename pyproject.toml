@@ -41,6 +41,10 @@ dev = [
     "black>=23.0",
     "ruff>=0.1",
 ]
+# Providers alternativos de LLM (pip install lupus[claude] ou lupus[openai])
+claude = ["langchain-anthropic>=0.3.0"]
+openai = ["langchain-openai>=0.3.0"]
+all-providers = ["langchain-anthropic>=0.3.0", "langchain-openai>=0.3.0"]
 
 [project.urls]
 Homepage = "https://github.com/eduardo-ebdl/lupus"

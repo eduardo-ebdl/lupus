@@ -9,7 +9,7 @@ import os
 import sqlite3
 
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
+from llm_provider import build_llm
 from langchain.agents import create_agent
 from langchain.agents.middleware import TodoListMiddleware
 from deepagents.middleware.filesystem import FilesystemMiddleware
@@ -24,11 +24,8 @@ from tools import ALL_TOOLS
 
 load_dotenv()
 
-# Validação de variáveis obrigatórias
-if not os.getenv("GOOGLE_API_KEY"):
-    raise ValueError(
-        "GOOGLE_API_KEY não definida. Configure no arquivo .env ou como variável de ambiente."
-    )
+# Validação de API key agora é feita em llm_provider.build_llm() no momento da criação do agente,
+# de forma específica por provider. Não valida mais GOOGLE_API_KEY em import-time.
 
 # LangSmith — ativado automaticamente pelo LangChain quando LANGCHAIN_TRACING_V2=true
 # está definido no .env. Nenhum código adicional necessário — o load_dotenv() acima
@@ -137,7 +134,7 @@ def make_agent(system_prompt: str = SYSTEM_PROMPT, checkpointer=None):
     if checkpointer is None:
         checkpointer = get_checkpointer()
 
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+    llm = build_llm()
 
     # Lê path do ctx_manager (atualizado automaticamente por clone_repository)
     current_project_path = ctx_manager.path or _DEFAULT_PROJECT

@@ -51,10 +51,13 @@ def mark_indexed(path: str) -> None:
 
 def _get_retriever():
     """Retorna o retriever, carregando do disco se necessário."""
-    global _retriever
+    global _retriever, _indexed_path
     if _retriever is None:
         from rag.retriever import get_retriever
         _retriever = get_retriever(os.path.normpath(_INDEX_DIR))
+        # Restaura _indexed_path a partir dos metadados do índice
+        if _retriever is not None and getattr(_retriever, 'repo_path', None):
+            _indexed_path = _retriever.repo_path
     return _retriever
 
 

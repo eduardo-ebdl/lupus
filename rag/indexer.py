@@ -1,6 +1,7 @@
 """Indexer: chunking semântico do codebase + geração de embeddings + FAISS.
 
 Estratégia de chunking por unidade semântica (não por tamanho fixo):
+- .py   → 1 função/classe = 1 chunk (split por def/class de top-level)
 - .sql  → 1 arquivo = 1 chunk (cada model dbt é uma unidade coesa)
 - .yml  → 1 arquivo = 1 chunk (configs são pequenos e interdependentes)
 - .ipynb → 1 cell de código = 1 chunk (células pip install são ignoradas)
@@ -20,8 +21,11 @@ from sentence_transformers import SentenceTransformer
 # Modelo local, sem custo de API — 80MB, 384 dims, ótimo para código + texto
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
+# Tamanho máximo de um chunk Python em chars (evita chunks gigantes de arquivos grandes)
+_MAX_PYTHON_CHUNK_CHARS = 4000
+
 # Extensões indexadas e as que devem ser ignoradas
-INDEXED_EXTENSIONS = {".sql", ".yml", ".yaml", ".md", ".ipynb"}
+INDEXED_EXTENSIONS = {".py", ".sql", ".yml", ".yaml", ".md", ".ipynb"}
 IGNORED_PATTERNS = {
     "requirements.txt", "LICENSE", ".env", ".env.example",
     "srag_agent_v1_outputs.ipynb",  # só outputs, sem código limpo
@@ -29,19 +33,96 @@ IGNORED_PATTERNS = {
 
 
 def _detect_layer(file_path: str) -> str:
-    """Detecta a camada/módulo com base no caminho do arquivo."""
+    """Detecta a camada/módulo com base no caminho do arquivo.
+
+    Suporta tanto nomenclatura específica de projetos dbt (bronze/silver/gold)
+    quanto estrutura genérica de projetos Python.
+    """
     p = file_path.replace("\\", "/").lower()
+    # Camadas dbt / Medallion Architecture
     if "models/bronze" in p or "/bronze/" in p:
         return "bronze"
     if "models/silver" in p or "/silver/" in p:
         return "silver"
     if "models/gold" in p or "/gold/" in p:
         return "gold"
+    # Módulos genéricos de projetos Python
+    if "/tests/" in p or "/test_" in p or p.startswith("test_"):
+        return "tests"
+    if "/api/" in p or "/routes/" in p or "/endpoints/" in p:
+        return "api"
+    if "/core/" in p:
+        return "core"
+    if "/tools/" in p:
+        return "tools"
+    if "/rag/" in p:
+        return "rag"
+    if "/scripts/" in p:
+        return "scripts"
+    if "/models/" in p:
+        return "models"
+    if "/utils/" in p or "/helpers/" in p:
+        return "utils"
+    # Projetos específicos do srag_agent
     if "ai_agent" in p:
         return "ai_agent"
     if "agent_srag_pipeline" in p or "pipeline" in p:
         return "pipeline"
     return "root"
+
+
+def _chunk_python(file_path: str, rel_path: str) -> list[dict]:
+    """Python: 1 função/classe top-level = 1 chunk.
+
+    Divide por definitões de função e classe que começam na coluna 0
+    (top-level, sem indentação). Docstrings do módulo são incluídas
+    no primeiro chunk como contexto.
+    """
+    try:
+        with open(file_path, encoding="utf-8", errors="replace") as f:
+            content = f.read()
+    except OSError:
+        return []
+
+    if not content.strip():
+        return []
+
+    # Divide por definitões top-level (sem indentação)
+    parts = re.split(r"\n(?=(?:def |class |async def )\w)", content)
+    layer = _detect_layer(rel_path)
+    chunks = []
+
+    for i, part in enumerate(parts):
+        part = part.strip()
+        if len(part) < 20:  # descarta fragmentos muito curtos
+            continue
+        # Trunca chunks muito grandes para não explodir o índice
+        if len(part) > _MAX_PYTHON_CHUNK_CHARS:
+            part = part[:_MAX_PYTHON_CHUNK_CHARS] + "\n# [truncado]"
+        chunks.append({
+            "content": part,
+            "file_path": rel_path,
+            "file_type": "py",
+            "layer": layer,
+            "model_name": None,
+            "chunk_type": "python_function",
+            "chunk_index": i,
+        })
+
+    # Fallback: arquivo inteiro como um chunk (para arquivos sem defs)
+    if not chunks:
+        chunk_content = content.strip()[:_MAX_PYTHON_CHUNK_CHARS]
+        chunks.append({
+            "content": chunk_content,
+            "file_path": rel_path,
+            "file_type": "py",
+            "layer": layer,
+            "model_name": None,
+            "chunk_type": "python_module",
+            "chunk_index": 0,
+        })
+
+    return chunks
 
 
 def _chunk_sql(file_path: str, rel_path: str) -> list[dict]:
@@ -172,7 +253,9 @@ def collect_chunks(srag_root: str) -> list[dict]:
             full_path = os.path.join(root, fname)
             rel_path = os.path.relpath(full_path, base).replace("\\", "/")
 
-            if ext == ".sql":
+            if ext == ".py":
+                chunks.extend(_chunk_python(full_path, rel_path))
+            elif ext == ".sql":
                 chunks.extend(_chunk_sql(full_path, rel_path))
             elif ext in {".yml", ".yaml"}:
                 chunks.extend(_chunk_yml(full_path, rel_path))
@@ -272,10 +355,11 @@ def save_index(index: Any, chunks: list[dict], output_dir: str, repo_path: str =
 
     faiss.write_index(index, index_path)
 
-    # Prepara metadados com repo_id para fallback automático por mismatch
+    # Prepara metadados com repo_id e repo_path para fallback automático por mismatch
     metadata = {
         "chunks": chunks,
         "repo_id": _compute_repo_id(repo_path) if repo_path else None,
+        "repo_path": os.path.abspath(repo_path) if repo_path else None,
     }
 
     with open(metadata_path, "w", encoding="utf-8") as f:

@@ -8,6 +8,12 @@ langgraph-checkpoint-sqlite>=3.0.0
 python-dotenv>=1.2.1
 rich>=14.0.0
 
+# Providers alternativos de LLM (instale apenas o que for usar)
+# pip install langchain-anthropic   → Claude (LLM_PROVIDER=claude)
+# pip install langchain-openai      → OpenAI / Ollama / OpenRouter (LLM_PROVIDER=openai ou openai_compat)
+langchain-anthropic>=0.3.0
+# langchain-openai>=0.3.0
+
 # RAG — busca semântica híbrida (FAISS + BM25 + CrossEncoder)
 sentence-transformers>=5.0.0
 faiss-cpu>=1.7.4

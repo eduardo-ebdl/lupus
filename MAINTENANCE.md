@@ -2,6 +2,60 @@
 
 Documentação para contribuidores que modificam regras, comportamento ou configuração do Lupus.
 
+## Como Trocar de LLM
+
+O Lupus usa uma camada de abstração em `llm_provider.py` — basta configurar variáveis no `.env`, sem tocar no código.
+
+### Providers suportados
+
+| `LLM_PROVIDER` | Modelo padrão | API Key necessária |
+|----------------|--------------|-------------------|
+| `gemini` (padrão) | `gemini-2.5-flash` | `GOOGLE_API_KEY` |
+| `claude` | `claude-3-5-haiku-20241022` | `ANTHROPIC_API_KEY` |
+| `openai` | `gpt-4o-mini` | `OPENAI_API_KEY` |
+| `openai_compat` | depende do servidor | `LLM_BASE_URL` (obrigatório) |
+
+### Passos para trocar de provider
+
+**1. Instale a dependência do provider (se ainda não tiver):**
+```bash
+# Claude
+pip install langchain-anthropic
+
+# OpenAI / Ollama / OpenRouter
+pip install langchain-openai
+```
+
+**2. Configure o `.env`:**
+```bash
+# Para Claude (provider nativo do deepagents)
+LLM_PROVIDER=claude
+LLM_MODEL=claude-3-5-haiku-20241022
+ANTHROPIC_API_KEY=sua-chave-aqui
+
+# Para Ollama local (sem custo)
+LLM_PROVIDER=openai_compat
+LLM_MODEL=llama3.2
+LLM_BASE_URL=http://localhost:11434/v1
+```
+
+**3. Rode normalmente:**
+```bash
+python main.py
+```
+
+O agente inicia com o provider configurado — nenhuma outra mudança necessária.
+
+### Notas importantes
+
+- `LLM_TEMPERATURE` aceita float de 0 a 2 (padrão: 0 — determinístico)
+- `LLM_MODEL` pode ser qualquer modelo disponível no provider sem alterar código
+- Erros de API key são reportados com mensagem clara e link para obter a chave
+- A avaliação (`evaluation/run_evaluation.py`) usa o mesmo provider configurado — cuidado com custo ao usar Claude
+
+---
+
+
 ## Arquivos de Persona e Comportamento
 
 Dois arquivos definem como o Lupus funciona:
