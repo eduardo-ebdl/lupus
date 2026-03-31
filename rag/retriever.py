@@ -19,6 +19,7 @@ Padrão de uso:
 """
 
 import json
+import logging
 import os
 from dataclasses import dataclass, field
 
@@ -28,6 +29,11 @@ from rank_bm25 import BM25Okapi
 from sentence_transformers import CrossEncoder, SentenceTransformer
 
 from rag.indexer import EMBEDDING_MODEL
+
+# Suppress verbose logging from model loaders
+logging.getLogger("sentence_transformers").setLevel(logging.ERROR)
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 
 # Cross-encoder para reranking — processa (query, chunk) juntos, mais preciso que bi-encoder
 RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"

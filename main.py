@@ -9,6 +9,9 @@ from datetime import datetime
 # Suprime warnings de carregamento de pesos do HuggingFace/sentence-transformers
 logging.getLogger("sentence_transformers").setLevel(logging.ERROR)
 logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+
+logger = logging.getLogger(__name__)
 
 from rich.console import Console
 from rich.live import Live
@@ -266,12 +269,15 @@ def _run_with_streaming(agent, user_input: str, config: dict, turn: int = 0) -> 
 
     except KeyboardInterrupt:
         console.print("\n[dim]Interrompido.[/dim]\n")
-    except Exception:
+    except Exception as e:
         # Streaming falhou — recupera resposta do estado
+        logger.exception("Streaming error: %s", e)
         state_text = _get_last_ai_text(agent, config, expected_turn=turn)
         if state_text:
             displayed = state_text
             console.print(_make_panel(displayed))
+        else:
+            logger.error("Failed to recover response from agent state")
 
     return displayed, tool_calls_made
 

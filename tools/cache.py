@@ -13,6 +13,7 @@ from core.context_manager import get_project_path
 _TTL_SECONDS = 300  # 5 minutos
 _store: dict[str, tuple[float, str]] = {}  # key → (timestamp, result)
 _lock = threading.RLock()
+_last_purge_time = time.time()  # Timestamp do último purge
 
 
 def make_key(func_name: str, **kwargs) -> str:
@@ -35,11 +36,13 @@ def get(key: str) -> str | None:
 
 def set(key: str, value: str) -> None:
     """Armazena resultado no cache."""
+    global _last_purge_time
     with _lock:
         _store[key] = (time.time(), value)
-        # Limpa entradas expiradas periodicamente (a cada 20 escritas)
-        if len(_store) % 20 == 0:
+        # Limpa entradas expiradas periodicamente (a cada 20 escritas OU a cada 5 minutos)
+        if len(_store) % 20 == 0 or time.time() - _last_purge_time > _TTL_SECONDS:
             _purge_expired()
+            _last_purge_time = time.time()
 
 
 def _purge_expired() -> None:
