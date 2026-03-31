@@ -269,6 +269,81 @@ python scripts/build_rag_index.py
 python main.py
 ```
 
+---
+
+## Como escolher qual repositório analisar?
+
+Por padrão, o Lupus analisa o projeto **SRAG** incluído neste repositório (`./srag_agent`). Mas você pode analisar qualquer repositório técnico — local ou remoto do GitHub.
+
+### Opção 1: Apontar para um repositório local (PROJECT_PATH)
+
+Defina `PROJECT_PATH` no arquivo `.env`:
+
+```env
+# .env
+GOOGLE_API_KEY=sua-chave-aqui
+PROJECT_PATH=/caminho/absoluto/para/seu/projeto
+```
+
+Exemplo prático:
+
+```env
+# Analisar um projeto em home
+PROJECT_PATH=/Users/seu-usuario/Documents/meu-projeto-python
+
+# Ou no Windows
+PROJECT_PATH=C:\Users\seu-usuario\Documents\meu-projeto-python
+```
+
+Depois reinicie o Lupus:
+```bash
+python main.py
+```
+
+Todas as tools passarão a analisar este novo repositório.
+
+### Opção 2: Clonar e analisar um repositório GitHub (sem restart)
+
+Enquanto o Lupus está rodando, você pode pedir para clonar qualquer repositório público:
+
+```
+💬 Analisa o repositório github.com/dbt-labs/jaffle_shop
+
+🤖 (Lupus clona o repo, descobre a stack e mostra resumo)
+
+Repositório 'jaffle_shop' clonado com sucesso. 
+PROJECT_PATH atualizado. Todas as tools agora analisam este repositório.
+
+💬 Qual a arquitetura do projeto?
+
+🤖 (Lupus analisa jaffle_shop sem precisar reiniciar)
+```
+
+**Exemplos de repositórios para testar:**
+- `https://github.com/dbt-labs/jaffle_shop` — projeto dbt pequeno e bem documentado
+- `https://github.com/apache/airflow` — pipeline orchestration
+- Qualquer repositório público seu
+
+### Opção 3: Mudar para outro repositório na conversa
+
+```
+💬 Muda para https://github.com/apache/airflow
+
+🤖 (Clona, atualiza PROJECT_PATH)
+
+💬 Quais as principais tasks do pipeline?
+
+🤖 (Analisa Airflow agora)
+```
+
+### Ordem de prioridade
+
+1. **Se você definir `PROJECT_PATH` no `.env`** → Lupus comea analisando este repo
+2. **Se clonar um repo na conversa** → Substitui PROJECT_PATH temporariamente até reiniciar
+3. **Se nada for definido** → Padrão é `./srag_agent` (projeto SRAG incluído)
+
+---
+
 ## Avaliação
 
 O agente foi avaliado com 25 perguntas técnicas em 5 categorias (arquitetura, módulos, integração, design, RAG):
