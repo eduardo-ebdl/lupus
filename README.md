@@ -202,6 +202,26 @@ flowchart LR
 - **Arquitetura modular**: Cada ferramenta é independentemente implantável e testável.
 - **Auto-documentação**: O agente gera documentação descrevendo o repositório analisado.
 
+### ⚠️ Dependência Alpha: DeepAgents 0.5.0a2
+
+O Lupus usa **DeepAgents 0.5.0a2** — versão alpha que ainda pode sofrer mudanças. Esta é uma dependência necessária, mas você deve estar ciente dos potenciais problemas:
+
+**Sintomas conhecidos:**
+- Streaming pode ter timeout em contextos grandes (> 20KB)
+- Requisições simultâneas podem causar race conditions em raros casos
+- Mudanças de API entre versões alpha sem aviso prévio
+
+**Como verificar se é um problema do DeepAgents:**
+1. A resposta começa bem mas depois trava ou timeout?
+2. Você consegue fazer a mesma pergunta com um arquivo menor e funciona?
+3. Veja o troubleshooting em [MAINTENANCE.md](MAINTENANCE.md#troubleshooting-de-desenvolvimento)
+
+**Plano de upgrade:**
+- Quando DeepAgents 0.5.0 (versão final) for lançado, executaremos: `pip install deepagents==0.5.0 && pip freeze > requirements.lock`
+- Você será notificado via issue/release do Lupus
+
+---
+
 ## Estrutura do Projeto
 
 ```

@@ -165,6 +165,43 @@ Depois reative: `deactivate && source venv/Scripts/activate`
 **Por que não está em git:** `venv/` é gerado localmente e está em `.gitignore`. 
 Se problema persistir após recriar venv, o arquivo foi corrompido durante criação.
 
+## Upgrade de Dependências Alpha
+
+### Quando DeepAgents 0.5.0 final lançar
+
+1. **Atualizar requirements.txt:**
+   ```bash
+   # Edite requirements.txt, mudar:
+   # deepagents>=0.4.12
+   # para:
+   deepagents>=0.5.0
+   ```
+
+2. **Gerar novo lockfile:**
+   ```bash
+   pip install deepagents==0.5.0
+   pip freeze > requirements.lock
+   ```
+
+3. **Testar completamente:**
+   - Executar avaliação: `python evaluation/run_evaluation.py`
+   - Rodar suite de testes: `pytest tests/`
+   - Testar manualmente com 3+ repositórios
+
+4. **Commitar e documentar:**
+   ```bash
+   git add requirements.txt requirements.lock README.md
+   git commit -m "chore: Upgrade deepagents to 0.5.0 (stable release)
+   
+   - Remove alpha dependency warning from README
+   - Update MAINTENANCE.md with successful upgrade date
+   - Validation: evaluation passes, all tests green"
+   ```
+
+5. **Remover aviso do README:**
+   - Deletar seção "⚠️ Dependência Alpha: DeepAgents 0.5.0a2"
+   - Atualizar versão em SKILL.md metadata se necessário
+
 ## Próximas Melhorias
 
 - [ ] Adicionar pre-commit hook que roda `validate_skill_consistency.py`
@@ -172,6 +209,7 @@ Se problema persistir após recriar venv, o arquivo foi corrompido durante cria�
 - [ ] Gerar changelog automático quando `metadata.version` muda
 - [ ] Documentar exemplos de persona em diferentes linguagens
 - [ ] Template de venv com `activate` pre-corrigido
+- [ ] Upgrade para DeepAgents 0.5.0 quando lançado (remove alpha warning)
 
 ---
 
