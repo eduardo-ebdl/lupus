@@ -161,25 +161,23 @@ def _get_last_ai_text(agent, config: dict, expected_turn: int = 0) -> str | None
 
 
 def _run_with_streaming(agent, user_input: str, config: dict, turn: int = 0) -> tuple[str, list[str]]:
-    """Executa o agent com streaming de tokens e coleta telemetria de tools.
+    """Executa o agent com invoke() — fallback seguro para quando streaming falha.
 
     Retorna (response_text, tool_calls_made).
 
-    Buffer inteligente: texto gerado antes de um tool call (anúncios como
-    "Vou analisar...") é descartado. Texto após tool calls é a resposta real.
-    Se 3s passam sem tool call, o buffer é tratado como resposta real (flush).
+    Nota: Usa invoke() em vez de stream() porque deepagents 0.4.12/0.5.0a2 têm
+    problemas de timeout ao fazer streaming de respostas grandes. invoke() é mais
+    confiável e ainda apresenta feedback com "Processando..." enquanto o agente roda.
     """
-    displayed = ""       # texto já renderizado no painel
-    pre_buffer = ""      # texto pré-tool-call (pode ser descartado)
-    pre_buffer_flushed = False  # True após flush — renderização direta
-    pre_buffer_start: float | None = None
     tool_calls_made: list[str] = []
-    status_text = "pensando..."
 
-    _BUFFER_TIMEOUT = 3.0  # segundos sem tool call → flush buffer
-
-    def _make_panel(content: str) -> Panel:
-        body = Markdown(content) if content.strip() else Text(status_text, style="dim italic")
+    def _make_panel(content: str, status: str = "") -> Panel:
+        if status:
+            body = Text(status, style="dim italic")
+        elif content.strip():
+            body = Markdown(content)
+        else:
+            body = Text("processando...", style="dim italic")
         subtitle = f"[dim]{' → '.join(tool_calls_made)}[/dim]" if tool_calls_made else None
         return Panel(
             body,
@@ -191,93 +189,72 @@ def _run_with_streaming(agent, user_input: str, config: dict, turn: int = 0) -> 
             padding=(1, 2),
         )
 
-    def _extract_text(chunk) -> str:
-        """Extrai texto de um chunk de streaming."""
-        raw = chunk.content
-        if isinstance(raw, list):
-            return "".join(b.get("text", "") for b in raw if isinstance(b, dict))
-        elif isinstance(raw, str):
-            return raw
-        return ""
-
     try:
+        displayed = ""
         with Live(
-            _make_panel(""),
+            _make_panel("", "processando..."),
             console=console,
-            refresh_per_second=15,
+            refresh_per_second=2,
             transient=False,
         ) as live:
-            for chunk, metadata in agent.stream(
-                {"messages": [{"role": "user", "content": user_input}]},
-                config=config,
-                stream_mode="messages",
-            ):
-                # Detecta tool calls → descarta buffer de anúncio
-                if hasattr(chunk, "tool_calls") and chunk.tool_calls:
-                    for tc in chunk.tool_calls:
-                        name = tc.get("name", "")
+            # Invoca o agent com timeout — evita travamento indefinido
+            import signal
+
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Agent timeout (60s)")
+
+            # Windows não suporta signal.SIGALRM — usar threading em vez disso
+            import threading
+            result = None
+            exception = None
+
+            def invoke_agent():
+                nonlocal result, exception
+                try:
+                    result = agent.invoke(
+                        {"messages": [{"role": "user", "content": user_input}]},
+                        config=config,
+                    )
+                except Exception as e:
+                    exception = e
+
+            thread = threading.Thread(target=invoke_agent, daemon=True)
+            thread.start()
+            thread.join(timeout=60)  # 60 segundos de timeout
+
+            if thread.is_alive():
+                displayed = "[yellow]Tempo limite atingido[/yellow]. A operação demorou muito."
+                live.update(_make_panel(displayed))
+            elif exception:
+                raise exception
+            elif result is None:
+                displayed = "[red]Erro desconhecido[/red] — nenhuma resposta do agente."
+                live.update(_make_panel(displayed))
+
+            # Extrai ferramenta usadas do histórico de mensagens
+            messages = result.get("messages", [])
+            for msg in messages:
+                if hasattr(msg, "tool_calls") and msg.tool_calls:
+                    for tc in msg.tool_calls:
+                        name = tc.get("name", "") if isinstance(tc, dict) else getattr(tc, "name", "")
                         if name and name not in tool_calls_made:
                             tool_calls_made.append(name)
-                            status_text = _TOOL_STATUS.get(name, f"executando {name}...")
-                    if not pre_buffer_flushed:
-                        pre_buffer = ""  # descarta anúncio
-                        pre_buffer_flushed = True  # texto pós-tool é resposta real
-                    live.update(_make_panel(displayed))
-                    continue
 
-                # Acumula tokens de texto
-                if hasattr(chunk, "content") and chunk.content:
-                    chunk_type = getattr(chunk, "type", "")
-                    if chunk_type in ("tool", "ToolMessage", "ToolMessageChunk",
-                                      "human", "HumanMessage", "HumanMessageChunk"):
-                        continue
-                    if hasattr(chunk, "tool_calls") and chunk.tool_calls:
-                        continue
+            # Extrai última resposta AI
+            for msg in reversed(messages):
+                if getattr(msg, "type", "") == "ai":
+                    content = getattr(msg, "content", "")
+                    if isinstance(content, str):
+                        displayed = content
+                    break
 
-                    text = _extract_text(chunk)
-                    if not text:
-                        continue
-
-                    if not pre_buffer_flushed:
-                        # Ainda acumulando no buffer pré-tool
-                        pre_buffer += text
-                        if pre_buffer_start is None:
-                            pre_buffer_start = time.time()
-
-                        # Timeout: sem tool call → é resposta real, flush
-                        if pre_buffer_start and (time.time() - pre_buffer_start) >= _BUFFER_TIMEOUT:
-                            displayed += pre_buffer
-                            pre_buffer = ""
-                            pre_buffer_flushed = True
-                            live.update(_make_panel(displayed))
-                        else:
-                            live.update(_make_panel(displayed))
-                    else:
-                        # Buffer já flushed — renderizar direto
-                        displayed += text
-                        live.update(_make_panel(displayed))
-
-            # Stream terminou — flush qualquer buffer restante
-            if pre_buffer and not pre_buffer_flushed:
-                displayed += pre_buffer
-
-            # Safety net: verifica estado para resposta definitiva
-            state_text = _get_last_ai_text(agent, config, expected_turn=turn)
-            if state_text and len(state_text.strip()) > len(displayed.strip()):
-                displayed = state_text
             live.update(_make_panel(displayed))
 
     except KeyboardInterrupt:
         console.print("\n[dim]Interrompido.[/dim]\n")
     except Exception as e:
-        # Streaming falhou — recupera resposta do estado
-        logger.exception("Streaming error: %s", e)
-        state_text = _get_last_ai_text(agent, config, expected_turn=turn)
-        if state_text:
-            displayed = state_text
-            console.print(_make_panel(displayed))
-        else:
-            logger.error("Failed to recover response from agent state")
+        logger.exception("Agent invoke error: %s", e)
+        console.print(_make_panel("Erro ao processar sua pergunta.", f"[red]{str(e)[:100]}[/red]"))
 
     return displayed, tool_calls_made
 
