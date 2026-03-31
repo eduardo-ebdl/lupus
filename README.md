@@ -1,65 +1,63 @@
-# 🔍 Lupus — AI Code Intelligence Agent
+# Lupus — AI Code Intelligence Agent
 
-**Analisa qualquer repositório técnico via conversa natural.** Faça perguntas técnicas como se estivesse conversando com um especialista — o Lupus consulta o código real, nunca inventa.
+Agente conversacional para análise de repositórios via interface de chat. O Lupus consulta os arquivos reais do projeto através de 17 ferramentas especializadas. Todas as respostas são fundamentadas no código-fonte analisado, sem extrapolações baseadas em conhecimento geral.
 
-Configure qual repositório analisar de 3 formas:
-- **`.env`**: defina `PROJECT_PATH` para um repositório local
-- **Link no chat**: mande um link GitHub e o Lupus clona na hora
-- **Padrão**: analisa o projeto SRAG incluído
+## Configuração
 
-Desenvolvido como projeto acadêmico com [DeepAgents](https://github.com/deepagents) (LangChain/LangGraph) + Gemini 2.5 Flash.
+Especifique qual repositório analisar através de:
+- **`.env`**: configure `PROJECT_PATH` com o caminho absoluto do repositório local
+- **Chat interativo**: forneça uma URL do GitHub e o agente realizará clone automático sem necessidade de restart
+- **Padrão**: se não configurado, analisa o projeto SRAG incluído no repositório
 
-## O que faz
+Implementado com [DeepAgents](https://github.com/deepagents) (LangChain + LangGraph) e Gemini 2.5 Flash.
 
-Lupus é um agente conversacional especializado que responde perguntas técnicas sobre repositórios. Não usa conhecimento geral — consulta os arquivos reais do projeto via 17 tools especializadas. Tudo o que ele diz é fundamentado no código.
+## Capacidades
 
-**Exemplos de perguntas que Lupus responde:**
-```
-💬 "Qual a arquitetura do projeto?"
-💬 "Como a coluna X se transforma em Y?"
-💬 "Quais são as dependências externas?"
-💬 "Gera documentação da arquitetura"
-💬 "Analisa o repositório github.com/dbt-labs/jaffle_shop"
-```
+O agente fornece análise técnica de repositórios através de 17 ferramentas organizadas em 4 categorias:
 
-### 17 Tools Especializadas
+### Ferramentas de Discovery (5)
 
-**Discovery** (5) — mapeamento automático:
-- Detecta stack tecnológico (dbt, Node.js, Go, Java, Terraform, K8s, Docker, notebooks)
-- Explora estrutura de arquivos com secret scan
-- Lê dados (CSV, JSON, Parquet, Excel)
-- Clona repositórios GitHub na hora
+Mapeamento automático e exploração inicial do repositório:
+- `discover_project`: detecção de stack tecnológico (dbt, Node.js, Go, Java, Terraform, Kubernetes, Docker, Jupyter notebooks)
+- `explore_repository`: enumeração de estrutura de arquivos com análise de padrões de segurança
+- `read_data_file`: análise de dados estruturados (CSV, JSON, Parquet, Excel)
+- `clone_repository`: clonagem de repositórios GitHub públicos com atualização automática do contexto
+- `analyze_full_repository`: pipeline integrado de clonagem, exploração e análise
 
-**Análise de Domínio** (7) — lê arquivos reais:
-- Arquitetura: Medallion Architecture, módulos, fluxo de dados
-- dbt: Bronze/Silver/Gold, transformações, SQL, testes
-- Linhagem de dados: rastreamento completo fonte → camadas
-- Pipeline: DABs, schedule, deploy, orquestração
-- Dicionário de dados: colunas, tipos, descrições por camada
-- Dependências: grafo de imports (Python/JS/TS/Go), libs externas
-- Especificação de agentes: tools, guardrails, integrações
+### Ferramentas de Análise de Domínio (7)
 
-**Sub-agents** (4) — análise profunda:
-- Análise de código: leitura e explicação de arquivos
-- **Documentação automática**: gera Markdown do repositório
-- Review de arquitetura: análise crítica de decisões técnicas
-- Sugestões de melhoria: análise baseada em evidências
+Análise estruturada de componentes específicos através da leitura de arquivos reais:
+- `get_project_architecture`: análise de arquitetura (Medallion Architecture, modularização, fluxo de dados)
+- `analyze_dbt_model`: análise de modelos dbt (camadas Bronze/Silver/Gold, transformações SQL, testes)
+- `map_data_lineage`: rastreamento de linhagem de dados (origem até camadas finais)
+- `analyze_pipeline_config`: análise de pipelines (DABs, schedule, deploy, orquestração)
+- `get_data_dictionary`: extração de schema (colunas, tipos de dados, descrições por camada)
+- `map_code_dependencies`: análise de grafo de dependências (imports Python/JS/TS/Go, bibliotecas externas)
+- `get_agent_tools_spec`: especificação de agentes (tools, guardrails, integrações)
 
-**RAG** (1) — busca semântica:
-- Busca no código via hybrid search (FAISS + BM25 + RRF + CrossEncoder)
-- Encontra respostas sem saber o arquivo exato
+### Sub-agentes para Síntese (4)
 
-## ✨ Lupus se auto-documenta
+Análise de nível superior através de invocação interna do LLM:
+- `analyze_code`: leitura e explicação de arquivo específico
+- `generate_documentation`: geração de documentação em formato Markdown
+- `review_architecture`: análise crítica de decisões arquiteturais
+- `suggest_improvements`: recomendações baseadas em análise do repositório
 
-Lupus não é só um analisador — **ele gera documentação**. Você pode pedir:
+### Busca Semântica (1)
+
+- `search_codebase`: busca híbrida no código-fonte (FAISS para busca vetorial + BM25 para busca por palavra-chave + RRF para fusão de rankings + CrossEncoder para reranking)
+
+## Geração de Documentação
+
+A ferramenta `generate_documentation` produz documentação em formato Markdown a partir da análise do repositório. Exemplos de uso:
 
 ```
-💬 "Gera documentação completa da arquitetura"
-💬 "Cria um diagrama em Markdown da linhagem de dados"
-💬 "Documenta as 5 principais transformações do dbt"
+"Gera documentação completa da arquitetura"
+"Cria diagrama em Markdown da linhagem de dados"
+"Documenta as transformações principais do dbt"
 ```
 
-E o Lupus gera arquivos **Markdown profissionais** que explicam o repositório. Porque às vezes o melhor jeito de entender um projeto é **já tendo documentação bem feita**.
+A documentação gerada é salva automaticamente no diretório do projeto analisado.
 
 ---
 
@@ -69,46 +67,46 @@ E o Lupus gera arquivos **Markdown profissionais** que explicam o repositório. 
 
 ```mermaid
 flowchart TD
-    User(["👤 Usuário"])
-    User -->|pergunta| CLI
+    User(["User"])
+    User -->|query| CLI
 
-    subgraph CLI["CLI — main.py"]
-        Rich["Rich\nspinner · markdown · panels"]
+    subgraph CLI["CLI Interface (main.py)"]
+        IO["Input/Output via Rich"]
     end
 
-    CLI -->|invoke| MW
+    CLI -->|invoke| Agent
 
-    subgraph AgentCore["Agent — LangGraph  ·  config.py"]
+    subgraph Agent["Agent (LangGraph + config.py)"]
         direction TB
 
-        subgraph MW["Middleware Stack  (injeção de contexto)"]
+        subgraph MW["Middleware Stack"]
             direction LR
-            SK["SkillsMiddleware\nSKILL.md → persona Lupus (especialista técnico)"]
-            ME["MemoryMiddleware\nAGENTS.md → contexto macro"]
-            FS["FilesystemMiddleware\nacesso virtual a srag_agent/"]
-            PT["PatchToolCallsMW\ncorrige formato Gemini"]
-            TD["TodoListMiddleware\nrastreia subtarefas"]
+            SK["SkillsMiddleware (SKILL.md)"]
+            ME["MemoryMiddleware (AGENTS.md)"]
+            FS["FilesystemMiddleware"]
+            PT["PatchToolCallsMiddleware"]
+            TD["TodoListMiddleware"]
         end
 
-        LLM["🤖 Gemini 2.5 Flash\nraciocínio · tool selection · síntese"]
-        MW -->|contexto enriquecido| LLM
+        LLM["Gemini 2.5 Flash LLM"]
+        MW -->|enriched context| LLM
     end
 
-    LLM -->|tool call| Tools
+    LLM -->|tool invocation| Tools
 
-    subgraph Tools["Tools  (17 total)"]
+    subgraph Tools["Tools (17 total)"]
         direction LR
 
-        subgraph DISC["Discovery  ×5  —  mapeiam o repositório"]
+        subgraph DISC["Discovery (5)"]
             direction TB
-            D1["discover_project\ndetecta stack tecnológico"]
-            D2["explore_repository\nárvore anotada + secret scan"]
-            D3["read_data_file\nlê CSV · JSON · Parquet"]
-            D4["clone_repository\nclona do GitHub · troca PROJECT_PATH"]
-            D5["analyze_full_repository\nclone + explore + leitura automática"]
+            D1["discover_project"]
+            D2["explore_repository"]
+            D3["read_data_file"]
+            D4["clone_repository"]
+            D5["analyze_full_repository"]
         end
 
-        subgraph DT["Domain Tools  ×7  —  leem arquivos reais"]
+        subgraph DT["Domain Analysis (7)"]
             direction TB
             T1["get_project_architecture"]
             T2["analyze_dbt_model"]
@@ -119,24 +117,24 @@ flowchart TD
             T7["map_code_dependencies"]
         end
 
-        subgraph SA["Sub-agents  ×4  —  LLM interno"]
+        subgraph SA["Sub-agents (4)"]
             direction TB
-            S1["analyze_code\nlê arquivos do projeto"]
-            S2["generate_documentation\ngera Markdown"]
-            S3["review_architecture\nanálise crítica"]
-            S4["suggest_improvements\nsugestões priorizadas"]
+            S1["analyze_code"]
+            S2["generate_documentation"]
+            S3["review_architecture"]
+            S4["suggest_improvements"]
         end
 
-        subgraph RAG["RAG  ×1  —  busca semântica"]
-            SC["search_codebase\nhybrid search no codebase"]
+        subgraph RAG["RAG (1)"]
+            SC["search_codebase"]
         end
     end
 
-    Tools -->|resultado| LLM
-    LLM -->|resposta final| CLI
-    CLI -->|output formatado| User
+    Tools -->|results| LLM
+    LLM -->|response| CLI
+    CLI -->|formatted output| User
 
-    AgentCore -. "traces automáticos\n(LANGCHAIN_TRACING_V2=true)" .-> LS["📊 LangSmith\nobservabilidade"]
+    Agent -.->|optional tracing| LS["LangSmith (LANGCHAIN_TRACING_V2=true)"]
 ```
 
 ---
@@ -210,228 +208,244 @@ flowchart LR
 | "Quais melhorias você sugere pro projeto?" | `suggest_improvements` |
 | "Como `obito_srag_flag` é criada no SQL?" | `search_codebase` |
 
-## 🛠️ Stack Tecnológico
+## Technology Stack
 
-| Componente | Tecnologia | Por quê? |
-|---|---|---|
-| **Framework** | DeepAgents (LangChain + LangGraph) | Agentes com stateful memory e middleware customizável |
-| **LLM** | Gemini 2.5 Flash (Google AI) | Rápido, barato, excelente pra tool-calling |
-| **RAG** | FAISS + BM25 + RRF (local, sem API) | Busca semântica híbrida offline, seguro pra dados sensíveis |
-| **CLI** | Rich | Markdown, panels, spinners — output profissional no terminal |
-| **Persona** | SKILL.md → SkillsMiddleware | Instruções contextualizadas, tom consistente |
-| **Persistência** | SQLite (conversas) | Multi-turn memory, sem perder histórico |
-| **Observabilidade** | LangSmith (opcional) | Tracing automático, debug de chamadas |
-| **Demo** | SRAG (Databricks + dbt + Llama) | Projeto real, complexo, bem documentado |
+| Component | Technology | Rationale |
+|-----------|-----------|-----------|
+| Agent Framework | DeepAgents (LangChain + LangGraph) | Stateful conversation memory with pluggable middleware |
+| LLM | Gemini 2.5 Flash | Low latency, cost-effective, strong tool-calling capability |
+| Semantic Search | FAISS (local) + BM25 + RRF + CrossEncoder | Hybrid search pipeline, no external API, data remains local |
+| CLI Framework | Rich | Structured output formatting (markdown, panels, progress indicators) |
+| Persona System | SKILL.md + SkillsMiddleware | Context-aware instructions, consistent behavior |
+| Conversation Persistence | SQLite | Multi-turn session memory with checkpoint support |
+| Observability | LangSmith (optional) | Automatic tracing, tool invocation logging |
+| Reference Project | SRAG | Real-world data pipeline (Databricks + dbt + LLM agent) |
 
-**Escolhas de design:**
-- ✅ **Sem API externa pra RAG** — FAISS é offline, dados nunca saem do computador
-- ✅ **Contexto real** — tools consultam arquivos reais, não usam knowledge cutoff
-- ✅ **Modular** — cada tool é independente, fácil de estender
-- ✅ **Documentado** — o próprio Lupus gera documentação
+### Design Decisions
 
-## 📁 Estrutura do Projeto
+- **Local semantic search**: FAISS operates offline without external APIs. Sensitive repository data does not leave the user's machine.
+- **Real-time context**: Tools read actual files from the project; no reliance on training data cutoff dates.
+- **Modular architecture**: Each tool is independently deployable and testable.
+- **Self-documenting**: The agent generates documentation describing the analyzed repository.
+
+## Project Structure
 
 ```
 lupus/
-├── 🎯 ENTRYPOINT
-│   ├── main.py                    # Chat interativo (CLI)
-│   ├── config.py                  # Configuração central (LLM, tools, middlewares)
-│   └── .env.example               # Template — configure PROJECT_PATH e GOOGLE_API_KEY aqui
+├── Entry Points
+│   ├── main.py                    # CLI interface
+│   ├── config.py                  # Central configuration (LLM, tools, middleware)
+│   └── .env.example               # Environment template
 │
-├── 🧠 AGENTE
+├── Core Agent
 │   ├── core/
-│   │   ├── context_manager.py     # Gerencia repo ativo, dispara hooks
-│   │   └── repo_context.py        # Estado do repositório (path, cache, RAG)
-│   └── skills/lupus/SKILL.md      # Persona, tom, limites (lido automaticamente)
+│   │   ├── context_manager.py     # Repository context state and hook management
+│   │   └── repo_context.py        # Repository metadata (path, cache version, RAG sync)
+│   └── skills/lupus/SKILL.md      # Persona definition and behavior constraints
 │
-├── 🔧 17 TOOLS (Discovery + Domain + Sub-agents + RAG)
-│   ├── tools/__init__.py          # Exporta todas as 17 tools
-│   ├── tools/project_discovery.py # Stack detection (dbt, Node, Go, etc)
-│   ├── tools/repository_explorer.py # File tree + secret scan
-│   ├── tools/github_integration.py # Clone de repos GitHub
-│   ├── tools/architecture.py      # Análise de arquitetura
-│   ├── tools/dbt_analyzer.py      # Bronze/Silver/Gold, SQL
-│   ├── tools/lineage.py           # Data lineage (fluxo de dados)
-│   ├── tools/pipeline_analyzer.py # DAB schedule, deploy
-│   ├── tools/data_dictionary.py   # Schema, colunas, testes
-│   ├── tools/code_dependencies.py # Grafo de imports
-│   ├── tools/subagents.py         # analyze_code, generate_documentation, review, suggest
-│   ├── tools/rag_search.py        # Busca semântica híbrida (FAISS + BM25 + RRF)
-│   └── tools/cache.py             # Cache TTL compartilhado
+├── Tools (17 total)
+│   ├── tools/__init__.py          # Tool registry and exports
+│   │
+│   ├── Discovery Tools (5)
+│   │   ├── project_discovery.py   # Stack detection
+│   │   ├── repository_explorer.py # File structure enumeration
+│   │   ├── data_file_reader.py    # Structured data parsing
+│   │   ├── github_integration.py  # Repository cloning
+│   │   └── full_analysis.py       # Combined discovery pipeline
+│   │
+│   ├── Domain Tools (7)
+│   │   ├── architecture.py        # Architecture analysis
+│   │   ├── dbt_analyzer.py        # dbt model analysis
+│   │   ├── lineage.py             # Data lineage tracing
+│   │   ├── pipeline_analyzer.py   # Pipeline configuration analysis
+│   │   ├── data_dictionary.py     # Schema extraction
+│   │   ├── code_dependencies.py   # Dependency graph analysis
+│   │   └── agent_analyzer.py      # Agent specification
+│   │
+│   ├── Sub-agents (4)
+│   │   └── subagents.py           # analyze_code, generate_documentation, review, suggest
+│   │
+│   ├── RAG Tools (1)
+│   │   └── rag_search.py          # Semantic search
+│   │
+│   └── Utilities
+│       ├── cache.py               # LRU cache with TTL
+│       └── path_helpers.py        # Path resolution utilities
 │
-├── 🔍 RAG (Busca Semântica)
-│   ├── rag/indexer.py             # Chunking + FAISS builder
-│   ├── rag/retriever.py           # Hybrid search + reranker
-│   └── rag/index/                 # Índices gerados (gitignored)
+├── RAG Module
+│   ├── rag/
+│   │   ├── indexer.py             # Semantic chunking + FAISS index builder
+│   │   ├── retriever.py           # Hybrid search + CrossEncoder reranking
+│   │   └── index/                 # Generated indices (gitignored)
 │
-├── 🧪 TESTES & AVALIAÇÃO
-│   ├── tests/                     # 26 testes de integração (discovery + domain + persona)
+├── Testing & Evaluation
+│   ├── tests/                     # Integration tests
 │   ├── evaluation/
-│   │   ├── dataset.json           # 25 perguntas técnicas
-│   │   └── run_evaluation.py      # Avaliação com LLM-as-judge (96% accuracy)
+│   │   ├── dataset.json           # Test dataset (25 questions)
+│   │   └── run_evaluation.py      # Evaluation harness with LLM judge
 │   └── scripts/
-│       ├── build_rag_index.py     # Build offline do índice RAG
-│       └── generate_docs.py       # Gera 5 docs de referência
+│       ├── build_rag_index.py     # RAG index builder
+│       └── generate_docs.py       # Documentation generator
 │
-├── 📚 DOCS
-│   ├── docs/                      # Documentação de desenvolvimento (8 blocos)
-│   ├── README.md                  # Este arquivo
-│   └── AGENTS.md                  # Contexto macro do agente
+├── Documentation
+│   ├── docs/                      # Development documentation
+│   ├── README.md
+│   └── AGENTS.md                  # Agent context and guidelines
 │
-└── 📦 PROJETO DEMO
-    └── srag_agent/                # Projeto SRAG real (Databricks + dbt + Llama)
+└── Reference Project
+    └── srag_agent/                # Sample project (Databricks + dbt + LLM)
 ```
 
-**Fluxo de dados:**
+### Data Flow
+
 ```
-main.py → config.make_agent() → LangGraph
-   ↓
-Middleware Stack (Skills, Memory, Filesystem, Patch)
-   ↓
-Gemini 2.5 Flash (LLM)
-   ↓
-Invoca tools conforme necessário → tools/ (17 total)
-   ↓
-RAG busca (se pergunta sobre código) → rag/
-   ↓
-Resposta formatada (Rich) → usuário
+Input Query (main.py)
+         ↓
+    config.make_agent() → LangGraph Executor
+         ↓
+    Middleware Stack (Skills, Memory, Filesystem)
+         ↓
+    Gemini 2.5 Flash (LLM reasoning + tool selection)
+         ↓
+    Tool Invocation (discovery, domain, RAG, sub-agents)
+         ↓
+    File I/O + Semantic Search (RAG pipeline)
+         ↓
+    LLM Response Synthesis
+         ↓
+    Rich CLI Output Formatting
+         ↓
+    User Output
 ```
 
-## 🚀 Setup (5 minutos)
+## Setup
 
 ```bash
-# 1. Clone
+# 1. Clone repository
 git clone https://github.com/seu-usuario/lupus.git
 cd lupus
 
-# 2. Ambiente virtual
+# 2. Create virtual environment
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
+source venv/bin/activate  # Linux/macOS
 # ou: venv\Scripts\activate  # Windows
 
-# 3. Dependências
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Variáveis de ambiente
+# 4. Configure environment
 cp .env.example .env
-# OBRIGATÓRIO: adicione GOOGLE_API_KEY (get em https://aistudio.google.com/app/apikey)
-# OPCIONAL: configure PROJECT_PATH para seu repositório
+# REQUIRED: Set GOOGLE_API_KEY from https://aistudio.google.com/app/apikey
+# OPTIONAL: Set PROJECT_PATH to specify target repository
 
-# 5. Build do índice RAG (primeira vez, ~2 min)
+# 5. Build RAG index (first time only, ~2 minutes)
 python scripts/build_rag_index.py
 
-# 6. Rodar
+# 6. Start agent
 python main.py
 ```
 
-**Pronto!** Lupus está rodando. Comece com:
+### Verificação de Setup
+
+Após iniciar, o agente deve estar pronto para receber consultas. Exemplos de primeira entrada:
+
 ```
-💬 Qual a arquitetura do projeto?
-💬 Quais tecnologias são usadas?
-💬 Analisa github.com/dbt-labs/jaffle_shop
+"What is the project architecture?"
+"Identify technologies used"
+"Analyze https://github.com/dbt-labs/jaffle_shop"
 ```
 
 ---
 
-## 🎯 Como escolher qual repositório analisar?
+## Configuração de Repositório
 
-Por padrão, Lupus analisa o projeto **SRAG** incluído aqui. Mas você pode analisar **qualquer repositório** — local, remoto, público ou privado (se você tem acesso).
+O agente pode ser direcionado para analisar diferentes repositórios através de três mecanismos:
 
-### Opção 1: Repositório local (configure no `.env`)
+### Método 1: Configuração estática via `.env`
 
-Edite o `.env` e descomente/complete a linha `PROJECT_PATH`:
+Configure a variável `PROJECT_PATH` no arquivo `.env` com o caminho absoluto do repositório:
 
 ```env
 # .env
 GOOGLE_API_KEY=sua-chave-aqui
-
-# Escolha seu repositório
 PROJECT_PATH=/Users/seu-usuario/Documentos/meu-projeto-python
-# PROJECT_PATH=C:\Users\seu-usuario\Documentos\meu-projeto-python  (Windows)
+# ou no Windows:
+# PROJECT_PATH=C:\Users\seu-usuario\Documents\meu-projeto-python
 ```
 
-Depois **reinicie Lupus**:
+Após editar `.env`, reinicie o agente:
 ```bash
 python main.py
 ```
 
-A partir daí, **todas as tools analisam seu repositório**. Sem necessidade de configuração extra.
+Todas as ferramentas operarão sobre o repositório especificado até uma nova configuração.
 
-### Opção 2: Link do GitHub (clonar na hora, sem restart)
+### Método 2: Clone dinâmico via interface de chat
 
-**Sem restart!** Enquanto Lupus está rodando, peça para clonar:
-
-```
-💬 Analisa github.com/dbt-labs/jaffle_shop
-
-🤖 Clonando jaffle_shop... ✓
-   Descobrindo stack... ✓
-   
-   Repositório clonado com sucesso!
-   PROJECT_PATH atualizado. Todas as tools agora analisam este repositório.
-
-💬 Qual a arquitetura do projeto?
-
-🤖 (Analisa jaffle_shop sem precisar reiniciar)
-```
-
-**Repositórios legais para testar:**
-- `https://github.com/dbt-labs/jaffle_shop` — dbt clean room, perfect para começar
-- `https://github.com/apache/airflow` — orchestration, complexo
-- Qualquer repositório seu ou de open source que queira analisar
-
-### Opção 3: Trocar entre repositórios durante a conversa
+Durante a execução, o usuário pode fornecer uma URL de repositório GitHub. A ferramenta `clone_repository` realiza o clone e atualiza automaticamente o contexto de análise sem necessidade de restart:
 
 ```
-💬 Muda para https://github.com/apache/airflow
+Input: "Analyze repository https://github.com/dbt-labs/jaffle_shop"
 
-🤖 Clonando airflow... ✓
-
-💬 Quais as principais tasks do pipeline?
-
-🤖 (Agora analisa Airflow)
+Output: Repository cloned successfully. PROJECT_PATH updated. 
+        All tools now operate on jaffle_shop.
 ```
 
-### Resumo: qual usar?
+Exemplos de repositórios para teste:
+- `https://github.com/dbt-labs/jaffle_shop` (dbt reference project)
+- `https://github.com/apache/airflow` (orchestration framework)
 
-| Cenário | Use |
-|---------|-----|
-| Analisar sempre o mesmo repo | **Opção 1** — configure `PROJECT_PATH` no `.env` |
-| Testar vários repos | **Opção 2** — clone via chat (mais fácil, sem restart) |
-| Mudar de repo na conversa | **Opção 3** — dinâmico, instantâneo |
-| Nada configurado | **Padrão** — analisa `./srag_agent` (projeto SRAG) |
+### Método 3: Troca de contexto durante sessão
+
+Forneça uma URL diferente para mudar o repositório em análise:
+
+```
+Input: "Switch to https://github.com/apache/airflow"
+Output: Repository cloned and loaded.
+```
+
+### Precedência de Configuração
+
+| Precedência | Origem | Comportamento |
+|---|---|---|
+| 1 | `PROJECT_PATH` em `.env` | Repositório padrão na inicialização |
+| 2 | URL fornecida via chat | Sobrescreve PROJECT_PATH durante sessão |
+| 3 | Padrão | `./srag_agent` (se nenhuma configuração) |
 
 ---
 
-## 📊 Avaliação Quantitativa
+## Evaluation
 
-Lupus foi testado com 25 perguntas técnicas sobre o projeto SRAG. Resultados:
+The agent was evaluated on 25 technical questions across 5 categories using a test dataset with LLM-as-judge scoring.
 
-**Métricas Gerais:**
-| Métrica | Resultado |
-|---------|-----------|
-| **Accuracy** | **96%** ✓ (24/25 perguntas corretas) |
-| Keyword accuracy | 85% |
-| Tool coverage | 82% |
-| Completude (nota de juiz) | 4.8/5.0 |
-| **Relevância** | **5.0/5.0** ✓ |
-| **Fundamentação** | **5.0/5.0** ✓ |
+### Overall Metrics
 
-**Por categoria:**
-| Categoria | Acurácia | Cobertura | Completude |
-|-----------|---------|-----------|------------|
-| Arquitetura | 100% | 100% | 5.0 |
-| Módulos | 82% | 80% | 5.0 |
-| Integração | 88% | 50% | 5.0 |
+| Metric | Value |
+|--------|-------|
+| Accuracy | 96% (24/25) |
+| Keyword Match | 85% |
+| Tool Coverage | 82% |
+| Completeness (judge) | 4.8/5.0 |
+| Relevance | 5.0/5.0 |
+| Grounding | 5.0/5.0 |
+
+### Category Breakdown
+
+| Category | Accuracy | Tool Coverage | Completeness |
+|----------|----------|----------------|--------------|
+| Architecture | 100% | 100% | 5.0 |
+| Modules | 82% | 80% | 5.0 |
+| Integration | 88% | 50% | 5.0 |
 | Design | 81% | 80% | 4.8 |
 | RAG | 76% | 100% | 4.4 |
 
-**Rodas avaliação você mesmo:**
+### Run Evaluation
+
 ```bash
 python evaluation/run_evaluation.py
 ```
 
-Resultados são salvos em `evaluation/results.json`.
+Results are written to `evaluation/results.json`.
 
 ## Blocos de desenvolvimento
 
@@ -446,28 +460,44 @@ Resultados são salvos em `evaluation/results.json`.
 | 7 | Polish: README, requirements, organização, git |
 | 8 | RAG: hybrid search (FAISS + BM25 + RRF), embeddings locais |
 
-## ❓ Por que Lupus?
+## Motivation and Approach
 
-**Problema:** Documentação de código fica desatualizada. Onboarding é lento. Entender uma arquitetura grande requer horas de leitura.
+Repository analysis at scale presents challenges:
+- Documentation quickly diverges from implementation
+- Onboarding requires extensive time investment
+- Complex architectures demand precise, real-time understanding
 
-**Solução:** Um agente que lê código real em tempo real e explica com precisão.
-
-**Diferencial:**
-- ✅ Consulta arquivos reais, nunca inventa
-- ✅ Sem API externa pra RAG (dados sensíveis ficam locais)
-- ✅ Gera documentação automática (Markdown profissional)
-- ✅ Funciona com qualquer repositório (dbt, Python, Node, Terraform, K8s...)
-- ✅ Modular (fácil estender com novas tools)
-- ✅ Testado quantitativamente (96% accuracy)
+Lupus addresses these through:
+- **Grounded responses**: All answers derive from actual repository code
+- **No external APIs**: Local semantic search preserves data privacy
+- **Automatic documentation**: Generates current, accurate technical documentation
+- **Stack agnostic**: Operates on dbt, Python, Node.js, Terraform, Kubernetes, etc.
+- **Extensible architecture**: Tools are modular and independently testable
+- **Empirically validated**: 96% accuracy on technical question dataset
 
 ---
 
-## 🎓 Licença
+## Blocks of Development
 
-Projeto acadêmico — uso educacional e pesquisa.
+| Block | Description |
+|-------|-------------|
+| 1 | Environment setup, DeepAgents, Gemini integration |
+| 2 | Discovery tools (stack detection, exploration) |
+| 3 | Domain tools and agent orchestration |
+| 4 | Persona (SKILL.md), CLI interface |
+| 5 | Documentation generation |
+| 6 | Quantitative evaluation (25 questions, LLM-as-judge) |
+| 7 | Polish (README, requirements, organization) |
+| 8 | RAG pipeline (FAISS + BM25 + RRF + CrossEncoder) |
 
-**Built with:**
-- 🤖 Gemini 2.5 Flash
-- 🔗 DeepAgents (LangChain + LangGraph)
-- 🔍 FAISS + BM25 (busca local)
-- 📊 LangSmith (observabilidade opcional)
+---
+
+## License
+
+Academic project for educational and research purposes.
+
+**Technology:**
+- Gemini 2.5 Flash (LLM)
+- DeepAgents / LangChain / LangGraph (agent framework)
+- FAISS + BM25 (local semantic search)
+- LangSmith (optional observability)
