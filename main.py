@@ -404,10 +404,27 @@ def chat():
 
         # BYPASS: se não tem repositório real, chama LLM direto (agente não trava)
         if not ctx_manager.path or ctx_manager.path.endswith("srag_agent"):
-            # Modo conversacional simples — sem agente pesado
+            # Modo conversacional — mantém identidade do Lupus
             from langchain_google_genai import ChatGoogleGenerativeAI
+            from langchain_core.messages import HumanMessage, SystemMessage
+
             llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
-            response_obj = llm.invoke(user_input)
+
+            # System prompt simplificado — sem tools, só conversação
+            simple_prompt = """Você é o Lupus, um AI Engineer especializado em análise técnica de repositórios.
+
+Responda em português de forma amigável e profissional.
+
+IMPORTANTE: O usuário ainda NÃO configurou um repositório.
+- Se ele perguntar sobre análise de código: sugira que use /repo <URL> para clonar um repositório
+- Se for pergunta conversacional simples: responda normalmente, mantendo sua identidade técnica
+- Sempre que apropriado, sugira que configure um repositório para análises mais profundas"""
+
+            messages = [
+                SystemMessage(content=simple_prompt),
+                HumanMessage(content=user_input),
+            ]
+            response_obj = llm.invoke(messages)
             response = response_obj.content if hasattr(response_obj, 'content') else str(response_obj)
             tool_calls = []
             console.print(Panel(
