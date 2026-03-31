@@ -401,7 +401,25 @@ def chat():
 
         console.print()
         turn_counter += 1
-        response, tool_calls = _run_with_streaming(agent, user_input, config, turn=turn_counter)
+
+        # BYPASS: se não tem repositório real, chama LLM direto (agente não trava)
+        if not ctx_manager.path or ctx_manager.path.endswith("srag_agent"):
+            # Modo conversacional simples — sem agente pesado
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+            response_obj = llm.invoke(user_input)
+            response = response_obj.content if hasattr(response_obj, 'content') else str(response_obj)
+            tool_calls = []
+            console.print(Panel(
+                response,
+                border_style="bright_blue",
+                title="[bold blue]Lupus[/bold blue]",
+                title_align="left",
+                padding=(1, 2),
+            ))
+        else:
+            # Modo análise — usa agente com tools
+            response, tool_calls = _run_with_streaming(agent, user_input, config, turn=turn_counter)
 
         # Salva turno para eventual /reportar
         _last_turn = {
