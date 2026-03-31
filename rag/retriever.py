@@ -18,6 +18,7 @@ Padrão de uso:
     print(results.formatted)
 """
 
+import hashlib
 import json
 import logging
 import os
@@ -104,11 +105,13 @@ class Retriever:
         chunks: list[dict],
         model: SentenceTransformer,
         reranker: CrossEncoder,
+        repo_id: str | None = None,
     ):
         self._index = index
         self._chunks = chunks
         self._model = model
         self._reranker = reranker
+        self._repo_id = repo_id
 
         # BM25 construído sobre todos os chunks no carregamento
         corpus = [_tokenize(c["content"]) for c in chunks]
@@ -133,11 +136,37 @@ class Retriever:
 
         index = faiss.read_index(index_path)
         with open(metadata_path, encoding="utf-8") as f:
-            chunks = json.load(f)
+            data = json.load(f)
+
+        # Compatibilidade com metadados antigos (chunks como array direto)
+        # vs novos (chunks como dicionário com repo_id)
+        if isinstance(data, list):
+            chunks = data
+            repo_id = None
+        else:
+            chunks = data.get("chunks", [])
+            repo_id = data.get("repo_id")
 
         model = SentenceTransformer(model_name)
         reranker = CrossEncoder(reranker_name)
-        return cls(index, chunks, model, reranker)
+        return cls(index, chunks, model, reranker, repo_id=repo_id)
+
+    def is_synced(self, current_path: str) -> bool:
+        """Verifica se o índice foi construído para o repositório atual.
+
+        Returns True se o repo_id bate ou se não há repo_id no índice (compatibilidade).
+        """
+        if self._repo_id is None:
+            return True  # Compatibilidade com índices antigos
+
+        current_repo_id = self._compute_repo_id(current_path)
+        return self._repo_id == current_repo_id
+
+    @staticmethod
+    def _compute_repo_id(repo_path: str) -> str:
+        """Calcula hash do caminho do repositório (mesmo método do indexer)."""
+        abs_path = os.path.abspath(repo_path)
+        return hashlib.sha256(abs_path.encode()).hexdigest()[:16]
 
     def search(
         self,

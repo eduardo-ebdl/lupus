@@ -60,7 +60,7 @@ def main():
 
     # 3. Salvar
     print("[ 3/3 ] Salvando índice em disco...")
-    save_index(index, chunks, INDEX_DIR)
+    save_index(index, chunks, INDEX_DIR, repo_path=SRAG_ROOT)
 
     elapsed = time.time() - start
     total_chars = sum(len(c["content"]) for c in chunks)

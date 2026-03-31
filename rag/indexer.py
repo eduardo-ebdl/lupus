@@ -7,6 +7,7 @@ Estratégia de chunking por unidade semântica (não por tamanho fixo):
 - .md   → 1 seção (##) = 1 chunk
 """
 
+import hashlib
 import json
 import os
 import re
@@ -206,8 +207,21 @@ def build_faiss_index(chunks: list[dict], model_name: str = EMBEDDING_MODEL) -> 
     return index, chunks
 
 
-def save_index(index: Any, chunks: list[dict], output_dir: str) -> None:
-    """Salva o índice FAISS e os metadados em disco."""
+def _compute_repo_id(repo_path: str) -> str:
+    """Calcula hash do caminho absoluto do repositório para detecção de mismatch."""
+    abs_path = os.path.abspath(repo_path)
+    return hashlib.sha256(abs_path.encode()).hexdigest()[:16]
+
+
+def save_index(index: Any, chunks: list[dict], output_dir: str, repo_path: str = "") -> None:
+    """Salva o índice FAISS e os metadados em disco.
+
+    Args:
+        index: Índice FAISS construído
+        chunks: Lista de chunks com metadados
+        output_dir: Diretório onde salvar os arquivos
+        repo_path: Caminho do repositório para detectar mismatches (se vazio, não salva repo_id)
+    """
     os.makedirs(output_dir, exist_ok=True)
 
     index_path = os.path.join(output_dir, "srag.index")
@@ -215,10 +229,16 @@ def save_index(index: Any, chunks: list[dict], output_dir: str) -> None:
 
     faiss.write_index(index, index_path)
 
-    # Salva chunks sem o conteúdo completo no metadata separado
-    # (conteúdo já está no índice via embedding — aqui ficam os metadados)
+    # Prepara metadados com repo_id para fallback automático por mismatch
+    metadata = {
+        "chunks": chunks,
+        "repo_id": _compute_repo_id(repo_path) if repo_path else None,
+    }
+
     with open(metadata_path, "w", encoding="utf-8") as f:
-        json.dump(chunks, f, ensure_ascii=False, indent=2)
+        json.dump(metadata, f, ensure_ascii=False, indent=2)
 
     print(f"Índice salvo em: {index_path}")
     print(f"Metadados salvos em: {metadata_path}")
+    if repo_path:
+        print(f"Repositório: {os.path.abspath(repo_path)}")

@@ -26,18 +26,20 @@ _INDEX_DIR = os.path.join(os.path.dirname(__file__), "..", "rag", "index")
 _retriever = None
 
 # Estado de sincronização com o repo ativo
-_rag_synced = False
+# None = desconhecido (não verificado ainda), True/False = resultado da verificação
+_rag_synced = None
 _indexed_path = ""
 
 
 def on_repo_change(context) -> None:
     """Hook chamado pelo ProjectContextManager quando o repo muda.
 
-    Marca o índice RAG como desatualizado se o repo mudou.
+    Verifica se o índice RAG está sincronizado com o repositório atual.
     """
     global _rag_synced, _retriever
     _retriever = None
-    _rag_synced = (context.path == _indexed_path)
+    # Será verificado em _check_sync() quando carregar o retriever
+    _rag_synced = None  # Marca como desconhecido até verificar
 
 
 def mark_indexed(path: str) -> None:
@@ -56,12 +58,37 @@ def _get_retriever():
     return _retriever
 
 
+def _check_sync() -> bool:
+    """Verifica se o índice RAG está sincronizado com o repositório atual.
+
+    Returns True se sincronizado, False se houver mismatch.
+    """
+    global _rag_synced
+    if _rag_synced is not None:
+        return _rag_synced
+
+    current_path = get_project_path()
+    try:
+        retriever = _get_retriever()
+        _rag_synced = retriever.is_synced(current_path)
+    except FileNotFoundError:
+        _rag_synced = False
+    except Exception:
+        # Em caso de erro, assume que não está sincronizado
+        _rag_synced = False
+
+    return _rag_synced
+
+
 @tool
 def search_codebase(query: str, layer: str = "") -> str:
     """Busca semanticamente no código-fonte indexado do repositório usando RAG.
 
     Usa hybrid search (semântico + keyword + reranking) para encontrar os trechos
     de código mais relevantes à pergunta, mesmo sem saber o arquivo exato.
+
+    Fallback automático: Se o índice foi construído para outro repositório,
+    retorna aviso e usa analyze_code/grep_codebase como fallback.
 
     Use quando:
     - O usuário perguntar sobre implementação sem mencionar um arquivo específico
@@ -81,12 +108,14 @@ def search_codebase(query: str, layer: str = "") -> str:
         layer: Filtro opcional por camada ou módulo do projeto indexado.
                Se vazio, busca em todo o codebase.
     """
-    if not _rag_synced:
+    # Verifica sincronização do índice RAG
+    if not _check_sync():
+        current_path = get_project_path()
         return json.dumps({
-            "warning": "O índice de busca foi construído para outro repositório"
-                       f" ({_indexed_path or 'desconhecido'})."
-                       " Os resultados podem ser incorretos."
-                       " Use analyze_code para ler arquivos específicos.",
+            "warning": "O índice RAG está desatualizado para este repositório.",
+            "indexed_for": _indexed_path or "desconhecido",
+            "current": current_path,
+            "fallback": "Use analyze_code para explorar o codebase (lê e analisa arquivos específicos).",
         }, ensure_ascii=False)
 
     try:
