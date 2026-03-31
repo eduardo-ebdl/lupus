@@ -93,18 +93,18 @@ flowchart TD
     
     Response -->|output formatado| User
     
-    style User fill:#e3f2fd
-    style CLI fill:#e1f5fe
-    style Agent fill:#b3e5fc
-    style Skill fill:#81d4fa
-    style Decision fill:#80deea
-    style T1 fill:#4dd0e1
-    style T2 fill:#4dd0e1
-    style T3 fill:#4dd0e1
-    style T4 fill:#4dd0e1
-    style Tools fill:#80deea
-    style LLM fill:#b3e5fc
-    style Response fill:#e1f5fe
+    style User fill:#f5f9fc
+    style CLI fill:#f0f8fc
+    style Agent fill:#e8f4f8
+    style Skill fill:#e0f0f6
+    style Decision fill:#d8ecf4
+    style T1 fill:#d0e8f2
+    style T2 fill:#d0e8f2
+    style T3 fill:#d0e8f2
+    style T4 fill:#d0e8f2
+    style Tools fill:#d8ecf4
+    style LLM fill:#e8f4f8
+    style Response fill:#f0f8fc
 ```
 
 ---
@@ -143,20 +143,20 @@ flowchart LR
     Store -->|carrega| Query
     Result -->|passa pro| LLM["⚡ Gemini<br/>(sintetiza<br/>resposta)"]
     
-    style Build fill:#e3f2fd
-    style Repo fill:#e1f5fe
-    style Chunk fill:#b3e5fc
-    style Embed fill:#81d4fa
-    style Index fill:#80deea
-    style Store fill:#4dd0e1
-    style Query fill:#e3f2fd
-    style Input fill:#e1f5fe
-    style Semantic fill:#81d4fa
-    style Keyword fill:#81d4fa
-    style Fusion fill:#80deea
-    style Rerank fill:#4dd0e1
-    style Result fill:#26c6da
-    style LLM fill:#b3e5fc
+    style Build fill:#f5f9fc
+    style Repo fill:#f0f8fc
+    style Chunk fill:#e8f4f8
+    style Embed fill:#e0f0f6
+    style Index fill:#d8ecf4
+    style Store fill:#d0e8f2
+    style Query fill:#f5f9fc
+    style Input fill:#f0f8fc
+    style Semantic fill:#e0f0f6
+    style Keyword fill:#e0f0f6
+    style Fusion fill:#d8ecf4
+    style Rerank fill:#d0e8f2
+    style Result fill:#c8e4f0
+    style LLM fill:#e8f4f8
 ```
 
 ---
