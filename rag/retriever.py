@@ -22,6 +22,7 @@ import hashlib
 import json
 import logging
 import os
+import threading
 from dataclasses import dataclass, field
 
 import faiss
@@ -334,14 +335,32 @@ class Retriever:
 
 # Singleton global — carregado uma vez na primeira chamada da tool
 _retriever: Retriever | None = None
+_retriever_lock = threading.Lock()
 
 
 def get_retriever(index_dir: str | None = None) -> Retriever:
-    """Retorna o retriever singleton, carregando do disco se necessário."""
+    """Retorna o retriever singleton, carregando do disco se necessário.
+
+    Usa double-checked locking para thread safety: verifica _retriever fora do lock
+    para performance (path rápido), depois novamente dentro do lock para evitar
+    race conditions onde múltiplas threads tentam inicializar simultaneamente.
+
+    Esta proteção é importante em contextos multi-threaded (ex: future API endpoints)
+    mesmo que o CLI atual seja single-threaded. O Lock é simples e rápido — não há
+    risco de deadlock porque get_retriever() não chama outras funções que pegam locks.
+    """
     global _retriever
-    if _retriever is None:
-        if index_dir is None:
-            # Caminho padrão relativo ao pacote rag/
-            index_dir = os.path.join(os.path.dirname(__file__), "index")
-        _retriever = Retriever.load(index_dir)
+
+    # Check rápido fora do lock (path comum)
+    if _retriever is not None:
+        return _retriever
+
+    # Check dentro do lock (path de inicialização raro)
+    with _retriever_lock:
+        if _retriever is None:
+            if index_dir is None:
+                # Caminho padrão relativo ao pacote rag/
+                index_dir = os.path.join(os.path.dirname(__file__), "index")
+            _retriever = Retriever.load(index_dir)
+
     return _retriever
