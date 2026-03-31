@@ -93,15 +93,22 @@ def _export_conversation(agent, thread_id: str) -> str:
 
 
 def _print_banner(repo_name: str):
-    """Exibe banner de boas-vindas com o repositório ativo."""
+    """Exibe banner de boas-vindas com instruções de uso."""
     console.print()
+
+    # Texto diferente se tem repositório ativo ou não
+    if repo_name and repo_name != "srag_agent":
+        repo_text = f"[dim]Repositório ativo: [cyan]{repo_name}[/cyan][/dim]\n\n"
+    else:
+        repo_text = "[dim italic]Nenhum repositório configurado[/dim italic]\n[yellow]Use: /repo <URL> para clonar um repositório[/yellow]\n\n"
+
     console.print(
         Panel(
-            f"[bold white]Lupus[/bold white] — AI Code Intelligence Agent\n"
-            f"[dim]Repositório: [cyan]{repo_name}[/cyan][/dim]\n\n"
-            f"[dim italic]Digite [bold]/comandos[/bold] para ver todas as opções · ou [bold]sair[/bold][/dim italic]",
-            border_style="bright_yellow",
-            title="[bold yellow]Lupus[/bold yellow]",
+            f"[bold white]Lupus[/bold white] — AI Code Intelligence Agent\n\n"
+            f"{repo_text}"
+            f"[dim italic]Digite [bold]/comandos[/bold] para ver todas as opções ou [bold]/sair[/bold] para encerrar[/dim italic]",
+            border_style="bright_blue",
+            title="[bold blue]Lupus[/bold blue]",
             title_align="left",
             padding=(1, 2),
         )
@@ -182,8 +189,8 @@ def _run_with_streaming(agent, user_input: str, config: dict, turn: int = 0) -> 
         subtitle = f"[dim]{' → '.join(tool_calls_made)}[/dim]" if tool_calls_made else None
         return Panel(
             body,
-            border_style="bright_yellow",
-            title="[bold yellow]Lupus[/bold yellow]",
+            border_style="bright_blue",
+            title="[bold blue]Lupus[/bold blue]",
             title_align="left",
             subtitle=subtitle,
             subtitle_align="right",
@@ -289,7 +296,7 @@ def chat():
             )
 
         try:
-            user_input = console.input("[bold yellow]Você > [/bold yellow]")
+            user_input = console.input("[bold blue]Você > [/bold blue]")
         except (KeyboardInterrupt, EOFError):
             break
 
@@ -300,7 +307,7 @@ def chat():
 
         # Comandos especiais
         if cmd in ("sair", "exit", "quit", "/sair", "/exit", "/quit"):
-            console.print("\n[bold yellow]Até mais.[/bold yellow]\n")
+            console.print("\n[bold blue]Até mais.[/bold blue]\n")
             break
 
         if cmd == "/comandos" or cmd == "/help":
