@@ -438,6 +438,30 @@ IMPORTANTE: O usuário ainda NÃO configurou um repositório.
             # Modo análise — usa agente com tools
             response, tool_calls = _run_with_streaming(agent, user_input, config, turn=turn_counter)
 
+        # Detecta warnings de RAG desatualizado na resposta (mesmo se oculto em JSON)
+        try:
+            if "search_codebase" in tool_calls or "RAG" in response or "índice" in response.lower():
+                # Tenta parsear como JSON para detectar warnings silenciosos
+                if response.strip().startswith("{"):
+                    try:
+                        resp_json = json.loads(response)
+                        if "warning" in resp_json and "RAG" in resp_json.get("warning", ""):
+                            # Exibe warning de forma proeminente
+                            console.print(Panel(
+                                f"[yellow]⚠️  {resp_json['warning']}[/yellow]\n\n"
+                                f"[dim]Sugestão:[/dim] Execute `python scripts/build_rag_index.py` para reindexar\n"
+                                f"[dim]Enquanto isso:[/dim] Use `/comandos` e tente `/repo <URL>` para outro repositório",
+                                title="[bold yellow]Aviso: RAG Desatualizado[/bold yellow]",
+                                border_style="yellow",
+                                padding=(1, 2),
+                            ))
+                            # Mostra também a resposta original
+                            console.print(f"[dim]Resposta original:[/dim]\n{response}\n")
+                    except (json.JSONDecodeError, KeyError, TypeError):
+                        pass
+        except Exception:
+            pass  # Silencioso se houver erro na detecção
+
         # Salva turno para eventual /reportar
         _last_turn = {
             "question": user_input,
