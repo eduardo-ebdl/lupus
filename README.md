@@ -23,6 +23,8 @@ python main.py
 
 Teste com: `"Qual a arquitetura do projeto?"` ou `"Analisa https://github.com/dbt-labs/jaffle_shop"`
 
+**Preferir interface HTTP?** Para usar via REST API (FastAPI) em vez de CLI, veja [LupusAPI](#lupusapi--camada-http). Os mesmos agente e ferramentas funcionam através de endpoints HTTP com documentação interativa.
+
 ---
 
 ## 📖 Índice
@@ -78,12 +80,24 @@ Análise de nível superior através de invocação interna do LLM:
 
 ## Geração de Documentação
 
-A ferramenta `generate_documentation` produz documentação em formato Markdown a partir da análise do repositório. Exemplos de uso:
+A ferramenta `generate_documentation` produz documentação a partir da análise do repositório. Suporta múltiplos estilos e formatos:
+
+**Estilos disponíveis:**
+- `markdown` (padrão): Documentação estruturada em Markdown
+- `diagram`: Fluxogramas Mermaid e diagramas visuais
+
+**Formatos de citação:**
+- ABNT (padrão): Formatação brasileira
+- APA: American Psychological Association
+- Chicago: Estilo Chicago Manual of Style
+
+**Exemplos de uso:**
 
 ```
 "Gera documentação completa da arquitetura"
 "Cria diagrama em Markdown da linhagem de dados"
-"Documenta as transformações principais do dbt"
+"Documenta as transformações principais do dbt em formato APA"
+"Gera diagrama visual da arquitetura em estilo diagram"
 ```
 
 A documentação gerada é salva automaticamente no diretório do projeto analisado.
@@ -116,9 +130,9 @@ flowchart TD
     T3 --> Tools
     T4 --> Tools
     
-    Tools -->|resultado| LLM["⚡ Gemini<br/>2.5 Flash"]
+    Tools -->|resultado| LLM["⚡ LLM Flexível<br/>(Gemini/Claude/OpenAI)"]
     
-    LLM -->|síntese| Response["📝 Resposta<br/>(no código)"]
+    LLM -->|síntese| Response["📝 Resposta<br/>(fundamentada no código)"]
     
     Response -->|output| User
     
@@ -170,7 +184,7 @@ flowchart LR
     end
     
     Store -->|carrega| Query
-    Result -->|passa pro| LLM["⚡ Gemini<br/>(sintetiza<br/>resposta)"]
+    Result -->|passa pro| LLM["⚡ LLM Flexível<br/>(padrão: Gemini<br/>2.5 Flash)"]
     
     style Build fill:#d1fae5,stroke:#a7f3d0,stroke-width:2px,color:#333
     style Repo fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
@@ -209,6 +223,7 @@ flowchart LR
 | "Gere documentação da arquitetura" | `generate_documentation` |
 | "Por que essa decisão arquitetural foi tomada?" | `review_architecture` |
 | "Quais melhorias você sugere pro projeto?" | `suggest_improvements` |
+| "Sugira melhorias focadas em performance" | `suggest_improvements` (com parâmetro `focus`) |
 | "Como campos derivados são criados no SQL?" | `search_codebase` |
 
 ## Stack Tecnológico
@@ -216,7 +231,7 @@ flowchart LR
 | Componente | Tecnologia | Justificativa |
 |-----------|-----------|-----------|
 | Framework de Agentes | DeepAgents (LangChain + LangGraph) | Memória de conversa com estado e middleware plugável |
-| LLM | Flexível (Gemini, Claude, OpenAI) | Configurável via `LLM_PROVIDER` — padrão: Gemini 2.5 Flash |
+| LLM | Flexível (Gemini, Claude, OpenAI, OpenAI-compatible) | Configurável via `LLM_PROVIDER` — padrão: Gemini 2.5 Flash. OpenAI-compatible inclui Ollama, LM Studio, OpenRouter |
 | Busca Semântica | FAISS (local) + BM25 + RRF + CrossEncoder | Pipeline híbrido, sem API externa, dados locais |
 | Framework CLI | Rich | Formatação estruturada de output (markdown, painéis, indicadores) |
 | Sistema de Persona | SKILL.md + SkillsMiddleware | Instruções contextualizadas, comportamento consistente |
@@ -224,30 +239,42 @@ flowchart LR
 | Observabilidade | LangSmith (opcional) | Rastreamento automático, logging de invocação |
 | Embeddings | sentence-transformers / HuggingFace | all-MiniLM-L6-v2, 384 dims, local (sem APIs externas) |
 
+### Customizar Persona e Comportamento
+
+O arquivo `skills/lupus/SKILL.md` define a persona, tom, limites e regras do agente. Você pode editar este arquivo para customizar o comportamento:
+
+```markdown
+# skills/lupus/SKILL.md
+Você é Lupus, assistente especializado em análise de repositórios...
+Seu tom: Profissional e técnico
+Limite de contexto: 8KB por arquivo
+```
+
+**Hot reload automático:** O agente detecta automaticamente mudanças em `SKILL.md` e recarrega a persona sem necessidade de restart. Após salvar o arquivo, a próxima pergunta já utilizará a nova persona.
+
+Exemplo: Se editar o tom de "profissional" para "casual", a próxima resposta refletirá essa mudança.
+
 ### Decisões de Design
 
 - **Busca semântica local**: FAISS opera offline sem APIs externas. Dados sensíveis do repositório não saem da máquina do usuário.
 - **Contexto em tempo real**: As ferramentas consultam arquivos reais do projeto; sem dependência de datas de treinamento.
 - **Arquitetura modular**: Cada ferramenta é independentemente implantável e testável.
 - **Auto-documentação**: O agente gera documentação descrevendo o repositório analisado.
+- **Persona configurável**: Comportamento do agente é definido em arquivo editável com hot reload.
 
 ### ⚠️ Dependência Alpha: DeepAgents 0.5.0a2
 
-O Lupus usa **DeepAgents 0.5.0a2** — versão alpha que ainda pode sofrer mudanças. Esta é uma dependência necessária, mas você deve estar ciente dos potenciais problemas:
+O Lupus usa **DeepAgents 0.5.0a2** em operação estável. Essa versão alpha foi escolhida como dependência fixa porque oferece recursos avançados de middleware e memória de conversa que não estão disponíveis em versões estáveis anteriores.
 
-**Sintomas conhecidos:**
-- Streaming pode ter timeout em contextos grandes (> 20KB)
-- Requisições simultâneas podem causar race conditions em raros casos
-- Mudanças de API entre versões alpha sem aviso prévio
+**Considerações conhecidas:**
+- Streaming pode ter timeout em contextos muito grandes (> 20KB)
+- Requisições simultâneas podem em raros casos apresentar race conditions
+- API pode sofrer mudanças entre versões alpha
 
 **Como verificar se é um problema do DeepAgents:**
 1. A resposta começa bem mas depois trava ou timeout?
 2. Você consegue fazer a mesma pergunta com um arquivo menor e funciona?
 3. Veja o troubleshooting em [MAINTENANCE.md](MAINTENANCE.md#troubleshooting-de-desenvolvimento)
-
-**Plano de upgrade:**
-- Quando DeepAgents 0.5.0 (versão final) for lançado, executaremos: `pip install deepagents==0.5.0 && pip freeze > requirements.lock`
-- Você será notificado via issue/release do Lupus
 
 ---
 
@@ -304,11 +331,13 @@ lupus/
 ├── Testes e Avaliação
 │   ├── tests/                     # Testes de integração
 │   ├── evaluation/
-│   │   ├── dataset.json           # Dataset de teste (25 perguntas)
-│   │   └── run_evaluation.py      # Harness de avaliação com LLM como juiz
+│   │   ├── dataset.json           # Dataset de teste (25 exemplos)
+│   │   ├── run_evaluation.py      # Harness de avaliação com LLM como juiz
+│   │   └── results.json           # Resultados da avaliação
 │   └── scripts/
 │       ├── build_rag_index.py     # Builder de índice RAG
-│       └── generate_docs.py       # Gerador de documentação
+│       ├── generate_docs.py       # Gerador de documentação
+│       └── validate_skill_consistency.py  # Valida persona em SKILL.md
 │
 ├── Documentação
 │   ├── README.md
@@ -402,11 +431,29 @@ Configure a variável `PROJECT_PATH` no arquivo `.env` com o caminho absoluto do
 
 ```env
 # .env
-GOOGLE_API_KEY=sua-chave-aqui
+# OBRIGATÓRIO: Provedor LLM e chaves
+LLM_PROVIDER=gemini  # ou: claude, openai, openai_compat
+GOOGLE_API_KEY=sua-chave-do-google-aqui
+# ANTHROPIC_API_KEY=sua-chave-se-usar-claude  # Comentado se não usar Claude
+# OPENAI_API_KEY=sua-chave-se-usar-openai  # Comentado se não usar OpenAI
+
+# OBRIGATÓRIO: Repositório a analisar
 PROJECT_PATH=/Users/seu-usuario/Documentos/meu-projeto-python
-# ou no Windows:
-# PROJECT_PATH=C:\Users\seu-usuario\Documents\meu-projeto-python
+# ou no Windows: PROJECT_PATH=C:\Users\seu-usuario\Documents\meu-projeto-python
+
+# OPCIONAL: Configuração avançada
+LUPUS_MAX_CONTEXT_BYTES=8000  # Máximo de bytes por arquivo (padrão: 8000)
+LANGCHAIN_TRACING_V2=false    # true para habilitar LangSmith tracing
+
+# OPCIONAL: Configuração da API (se rodar com FastAPI)
+API_HOST=0.0.0.0
+API_PORT=8000
+API_RELOAD=true
+API_LOG_LEVEL=info
+API_AGENT_TIMEOUT=180
 ```
+
+Veja `.env.example` para a lista completa de variáveis disponíveis.
 
 Após editar `.env`, reinicie o agente:
 ```bash
@@ -448,6 +495,21 @@ Saída: Repositório clonado e carregado.
 
 **Importante:** Você **deve** configurar um repositório. Sem configuração, o agente não funciona.
 
+### Comandos CLI
+
+Durante a sessão interativa, você pode usar os seguintes comandos slash:
+
+| Comando | Descrição | Exemplo |
+|---------|-----------|---------|
+| `/repo <url>` | Muda repositório para análise (GitHub público apenas) | `/repo https://github.com/dbt-labs/jaffle_shop` |
+| `/status` | Mostra status do agente e configuração atual | `/status` |
+| `/export <formato>` | Exporta conversa em formato especificado | `/export json` ou `/export md` |
+| `/limpar` | Limpa histórico de conversa e começa do zero | `/limpar` |
+| `/reportar` | Gera relatório técnico da análise até o momento | `/reportar` |
+| `/comandos` | Lista todos os comandos CLI disponíveis | `/comandos` |
+
+Todos os comandos começam com `/` e são case-insensitive. Utilize-os para controlar a sessão sem formular perguntas.
+
 ### Limite de Contexto por Análise
 
 O Lupus limita o tamanho de arquivo lido em cada análise para evitar timeouts e excesso de uso de tokens. Padrão: **8000 bytes (8 KB)**.
@@ -476,14 +538,14 @@ O agente foi avaliado em 25 perguntas técnicas em 5 categorias usando um datase
 
 ### Métricas Gerais
 
-| Métrica | Valor |
-|--------|-------|
-| Acurácia | 96% (24/25) |
-| Correspondência de Keywords | 85% |
-| Cobertura de Ferramentas | 82% |
-| Completude (juiz) | 4.8/5.0 |
-| Relevância | 5.0/5.0 |
-| Fundamentação | 5.0/5.0 |
+| Métrica | Valor | Descrição |
+|--------|-------|-----------|
+| Acurácia | 96% (24/25) | Perguntas respondidas corretamente segundo LLM juiz |
+| Correspondência de Keywords | 85% | Presença de palavras-chave esperadas nas respostas |
+| Cobertura de Ferramentas | 82% | % de perguntas onde o agente usou a(s) ferramenta(s) correta(s) |
+| Completude (juiz) | 4.8/5.0 | Respostas completas e não-incompletas (escala 1-5) |
+| Relevância | 5.0/5.0 | Respostas relevantes para a pergunta formulada (escala 1-5) |
+| Fundamentação | 5.0/5.0 | Respostas fundamentadas no código-fonte (escala 1-5) |
 
 ### Análise por Categoria
 
@@ -511,11 +573,9 @@ O Lupus também expõe o agente via REST API, construída com FastAPI. A interfa
 
 ### Como rodar
 
-```bash
-# Instale as dependências da API (apenas uma vez)
-pip install fastapi uvicorn[standard]
+As dependências da API (FastAPI, Uvicorn) já estão em `requirements.txt`. Suba o servidor:
 
-# Suba o servidor (da raiz do projeto)
+```bash
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -527,10 +587,80 @@ Documentação interativa disponível em `http://localhost:8000/docs` (Swagger U
 
 | Método | Endpoint | Descrição |
 |---|---|---|
-| `POST` | `/chat` | Envia mensagem ao agente; suporta `session_id` para histórico multi-turn |
-| `GET` | `/tools` | Lista todas as 17 tools disponíveis com nome e descrição |
-| `POST` | `/eval/run` | Executa avaliações automáticas via LangSmith SDK; retorna scores por evaluator |
-| `GET` | `/health` | Status do servidor — `agent` e `langsmith` separados; retorna 503 se agente falhou |
+| `POST` | `/chat` | Envia mensagem ao agente com suporte a multi-turn |
+| `GET` | `/tools` | Lista todas as 17 tools disponíveis |
+| `POST` | `/eval/run` | Executa avaliações automáticas via LangSmith |
+| `GET` | `/health` | Status do servidor |
+
+**POST /chat** — Conversar com o agente
+
+```json
+// Request
+{
+  "message": "Qual a arquitetura do projeto?",
+  "session_id": "user-123"  // Permite histórico multi-turn
+}
+
+// Response
+{
+  "response": "O projeto usa Medallion Architecture com 3 camadas...",
+  "tools_used": ["get_project_architecture", "analyze_dbt_model"],
+  "latency_ms": 4213.50
+}
+```
+
+**GET /tools** — Lista de ferramentas disponíveis
+
+```json
+// Response
+{
+  "tools": [
+    {
+      "name": "discover_project",
+      "description": "Detecção de stack tecnológico"
+    },
+    ...
+  ]
+}
+```
+
+**POST /eval/run** — Executar avaliações
+
+```json
+// Request
+{
+  "evaluators": ["all"],  // ou ["correctness", "tool_usage", "latency"]
+  "max_examples": 3  // Número de exemplos para avaliar
+}
+
+// Response
+{
+  "experiment_url": "https://smith.langchain.com/experiments/abc123",
+  "results": {
+    "correctness": 0.95,
+    "tool_usage": 0.82,
+    "latency_score": 0.88
+  }
+}
+```
+
+**GET /health** — Status do servidor
+
+```json
+// Response (200 OK)
+{
+  "status": "healthy",
+  "agent": "ready",
+  "langsmith": "connected"
+}
+
+// Response (503 Service Unavailable)
+{
+  "status": "unhealthy",
+  "agent": "failed",
+  "error": "Agent initialization failed"
+}
+```
 
 ### Exemplo rápido
 
@@ -566,7 +696,7 @@ Com `LANGCHAIN_TRACING_V2=true`, todas as chamadas ao agente aparecem automatica
 O endpoint `/eval/run` usa o LangSmith SDK para criar experimentos rastreáveis:
 
 ```
-Dataset (chat_qa.jsonl, 20 exemplos)
+Dataset (dataset.json, 25 exemplos)
     ↓
 langsmith.evaluate(agente, evaluators=[correctness, tool_usage, latency])
     ↓
