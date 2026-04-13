@@ -55,7 +55,7 @@ _DATASET_JSONL = Path(__file__).parents[2] / "evaluation" / "datasets" / "chat_q
 _EVALUATOR_MAP = {
     "correctness": keyword_correctness,
     "tool_usage": tool_usage,
-    "latency": latency_score,
+    "latency_score": latency_score,
 }
 
 

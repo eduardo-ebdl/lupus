@@ -138,14 +138,15 @@ app = create_app()
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
     # Isso só executa quando rodamos `python api/main.py` diretamente.
     # O modo recomendado é via CLI: uvicorn api.main:app --reload
     uvicorn.run(
         "api.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info",
+        host=os.getenv("API_HOST", "0.0.0.0"),
+        port=int(os.getenv("API_PORT", "8000")),
+        reload=os.getenv("API_RELOAD", "true").lower() == "true",
+        log_level=os.getenv("API_LOG_LEVEL", "info"),
     )

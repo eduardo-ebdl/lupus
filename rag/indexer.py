@@ -278,6 +278,7 @@ def _load_sentence_transformer(model_name: str, timeout_seconds: int = 300) -> S
 
     Raises:
         TimeoutError: Se o carregamento exceder o timeout
+        FileNotFoundError: Se o modelo não puder ser carregado
     """
     import threading
     result = None

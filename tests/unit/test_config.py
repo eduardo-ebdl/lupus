@@ -52,7 +52,8 @@ class TestMakeAgent:
             mock_checkpointer = MagicMock()
             mock_get_checkpointer.return_value = mock_checkpointer
 
-            with patch("config.ChatGoogleGenerativeAI"):
+            with patch("config.build_llm") as mock_build_llm:
+                mock_build_llm.return_value = MagicMock()
                 with patch("config.FilesystemBackend"):
                     with patch("config.create_agent") as mock_create_agent:
                         mock_create_agent.return_value = MagicMock()
@@ -68,7 +69,8 @@ class TestMakeAgent:
 
         mock_checkpointer = MagicMock()
 
-        with patch("config.ChatGoogleGenerativeAI"):
+        with patch("config.build_llm") as mock_build_llm:
+            mock_build_llm.return_value = MagicMock()
             with patch("config.FilesystemBackend"):
                 with patch("config.create_agent") as mock_create_agent:
                     mock_agent = MagicMock()

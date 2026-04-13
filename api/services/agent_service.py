@@ -35,6 +35,7 @@ Isso é o padrão correto para integrar código sync com frameworks async.
 
 import asyncio
 import logging
+import os
 import time
 from typing import Any
 
@@ -91,7 +92,7 @@ async def invoke(
     agent: Any,
     message: str,
     session_id: str,
-    timeout_seconds: int = 180,
+    timeout_seconds: int = int(os.getenv("API_AGENT_TIMEOUT", "180")),
 ) -> tuple[str, list[str], float]:
     """Invoca o agente Lupus de forma assíncrona e segura.
 

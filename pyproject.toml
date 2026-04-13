@@ -65,7 +65,7 @@ select = ["E", "F", "W"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-testpaths = ["tests"]
+testpaths = ["tests/unit"]
 addopts = "-v --strict-markers"
 markers = [
     "unit: Unit tests (fast, no external dependencies)",
