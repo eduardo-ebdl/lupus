@@ -516,7 +516,3 @@ Resultado: Implementação encontrada + explicação
 - Defina: `export HF_HUB_DOWNLOAD_TIMEOUT=600`
 - Aguarde até 5 minutos (primeiro download é grande)
 
----
-
-**Última atualização:** 2026-03-31  
-**Versão:** 1.0.0

@@ -307,7 +307,3 @@ Se problema persistir após recriar venv, o arquivo foi corrompido durante cria�
 - [ ] Template de venv com `activate` pre-corrigido
 - [ ] Upgrade para DeepAgents 0.5.0 quando lançado (remove alpha warning)
 
----
-
-**Última atualização:** 2026-03-31  
-**Responsável:** Equipe de manutenção do Lupus

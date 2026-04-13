@@ -1,1 +1,1 @@
-"""RAG module — indexação e retrieval semântico do codebase SRAG."""
+"""RAG module — indexação e retrieval semântico do repositório analisado."""

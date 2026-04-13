@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Valida consistência entre SKILL.md e config.py.
 
 Garante que instruções chave não contradizem entre os dois arquivos.

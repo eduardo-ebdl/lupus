@@ -139,7 +139,7 @@ def _parse_notebook(notebook_path: str) -> dict:
 
 @tool
 def get_agent_tools_spec(tool_name: str = "") -> str:
-    """Retorna a especificação completa das tools do AI Agent SRAG.
+    """Retorna a especificação completa das tools do projeto analisado.
 
     Lê o notebook real do agente (.ipynb) e extrai: configuração do LLM,
     tools com docstrings, data quality gate, guardrails e observabilidade.

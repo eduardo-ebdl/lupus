@@ -97,7 +97,7 @@ def _print_banner(repo_name: str):
     console.print()
 
     # Texto diferente se tem repositório ativo ou não
-    if repo_name and repo_name != "srag_agent":
+    if repo_name:
         repo_text = f"[dim]Repositório ativo: [cyan]{repo_name}[/cyan][/dim]\n\n"
     else:
         repo_text = "[dim italic]Nenhum repositório configurado[/dim italic]\n[yellow]Use: /repo <URL> para clonar um repositório[/yellow]\n\n"

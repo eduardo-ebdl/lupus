@@ -4,7 +4,9 @@ Uso:
     python scripts/build_rag_index.py
 
 O índice é salvo em rag/index/ (gitignored).
-Execute novamente sempre que o codebase do SRAG mudar.
+Execute novamente sempre que o repositório alvo mudar.
+
+Requer: PROJECT_PATH configurado no .env ou variável de ambiente.
 """
 
 import os
@@ -19,7 +21,7 @@ os.chdir(PROJECT_ROOT)
 from rag.indexer import collect_chunks, build_faiss_index, save_index
 from core.context_manager import get_project_path
 
-SRAG_ROOT = get_project_path() or os.path.join(PROJECT_ROOT, "srag_agent")
+REPO_ROOT = get_project_path()
 INDEX_DIR = os.path.join(PROJECT_ROOT, "rag", "index")
 
 
@@ -27,18 +29,25 @@ def main():
     print("=" * 60)
     print("LUPUS — RAG INDEX BUILDER")
     print("=" * 60)
-    print(f"Fonte: {SRAG_ROOT}  (PROJECT_PATH env var ou padrão srag_agent/)")
-    print(f"Destino: {INDEX_DIR}")
+
+    # Validar que repositório foi configurado
+    if not REPO_ROOT:
+        print("ERRO: Nenhum repositório configurado!")
+        print("Configure PROJECT_PATH no .env ou via variável de ambiente.")
+        sys.exit(1)
+
+    print(f"Repositório: {REPO_ROOT}")
+    print(f"Índice: {INDEX_DIR}")
     print()
 
     start = time.time()
 
     # 1. Coleta e chunking
     print("[ 1/3 ] Coletando e chunking arquivos...")
-    chunks = collect_chunks(SRAG_ROOT)
+    chunks = collect_chunks(REPO_ROOT)
 
     if not chunks:
-        print("ERRO: Nenhum chunk gerado. Verifique se srag_agent/ existe e tem arquivos.")
+        print("ERRO: Nenhum chunk gerado. Verifique se o repositório existe e tem arquivos.")
         sys.exit(1)
 
     # Estatísticas de chunking
@@ -60,7 +69,7 @@ def main():
 
     # 3. Salvar
     print("[ 3/3 ] Salvando índice em disco...")
-    save_index(index, chunks, INDEX_DIR, repo_path=SRAG_ROOT)
+    save_index(index, chunks, INDEX_DIR, repo_path=REPO_ROOT)
 
     elapsed = time.time() - start
     total_chars = sum(len(c["content"]) for c in chunks)

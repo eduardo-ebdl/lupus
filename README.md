@@ -142,7 +142,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Build["⚙️ BUILD-TIME<br/>(offline, uma vez)"]
+    subgraph Build["⚙️ BUILD-TIME"]
         Repo["📁 Repositório<br/>(.sql, .yml, .ipynb, .md)"]
         Chunk["🔪 Chunking<br/>(1 arquivo/chunk ou<br/>1 célula/seção)"]
         Embed["📊 Embeddings<br/>(all-MiniLM-L6-v2<br/>384 dims, local)"]
@@ -151,9 +151,9 @@ flowchart LR
         Repo --> Chunk --> Embed --> Index
     end
     
-    Build -->|salva| Store["💾 rag/index/<br/>(gitignored)<br/>srag.index<br/>+ metadata.json"]
+    Build -->|salva| Store["💾 rag/index/<br/>(gitignored)<br/>lupus.index<br/>+ metadata.json"]
     
-    subgraph Query["🔍 QUERY-TIME<br/>(ao usar search_codebase)"]
+    subgraph Query["🔍 QUERY-TIME"]
         Input["❓ User Query<br/>(ex: 'como<br/>obito_flag<br/>é criada?')"]
         
         Semantic["Semantic Search<br/>(FAISS)"]
@@ -199,30 +199,30 @@ flowchart LR
 | "Tem algum CSV aqui? Me mostra as colunas" | `read_data_file` |
 | "Analisa o repositório github.com/dbt-labs/jaffle_shop" | `analyze_full_repository` |
 | "Qual a arquitetura do projeto?" | `get_project_architecture` |
-| "O que faz o silver_srag_data.sql?" | `analyze_dbt_model` |
-| "Como os dados fluem do Bronze ao Gold?" | `map_data_lineage` |
+| "O que faz este modelo SQL?" | `analyze_dbt_model` |
+| "Como os dados fluem entre as camadas?" | `map_data_lineage` |
 | "Qual o schedule do pipeline?" | `analyze_pipeline_config` |
-| "Quais colunas tem na Gold?" | `get_data_dictionary` |
-| "Como o ai_agent usa o LLM?" | `get_agent_tools_spec` |
+| "Quais colunas estão disponíveis?" | `get_data_dictionary` |
+| "Como o projeto usa o LLM?" | `get_agent_tools_spec` |
 | "Quais módulos esse projeto importa mais?" | `map_code_dependencies` |
 | "Leia o arquivo X para mim" | `analyze_code` |
 | "Gere documentação da arquitetura" | `generate_documentation` |
-| "Por que usaram ephemeral na Bronze?" | `review_architecture` |
+| "Por que essa decisão arquitetural foi tomada?" | `review_architecture` |
 | "Quais melhorias você sugere pro projeto?" | `suggest_improvements` |
-| "Como `obito_srag_flag` é criada no SQL?" | `search_codebase` |
+| "Como campos derivados são criados no SQL?" | `search_codebase` |
 
 ## Stack Tecnológico
 
 | Componente | Tecnologia | Justificativa |
 |-----------|-----------|-----------|
 | Framework de Agentes | DeepAgents (LangChain + LangGraph) | Memória de conversa com estado e middleware plugável |
-| LLM | Gemini 2.5 Flash | Baixa latência, custo-efetivo, forte em tool-calling |
+| LLM | Flexível (Gemini, Claude, OpenAI) | Configurável via `LLM_PROVIDER` — padrão: Gemini 2.5 Flash |
 | Busca Semântica | FAISS (local) + BM25 + RRF + CrossEncoder | Pipeline híbrido, sem API externa, dados locais |
 | Framework CLI | Rich | Formatação estruturada de output (markdown, painéis, indicadores) |
 | Sistema de Persona | SKILL.md + SkillsMiddleware | Instruções contextualizadas, comportamento consistente |
 | Persistência de Conversas | SQLite | Memória multi-turn com suporte a checkpoint |
 | Observabilidade | LangSmith (opcional) | Rastreamento automático, logging de invocação |
-| Projeto de Referência | SRAG | Pipeline de dados real (Databricks + dbt + agente LLM) |
+| Embeddings | sentence-transformers / HuggingFace | all-MiniLM-L6-v2, 384 dims, local (sem APIs externas) |
 
 ### Decisões de Design
 
@@ -314,9 +314,6 @@ lupus/
 │   ├── docs/                      # Documentação de desenvolvimento
 │   ├── README.md
 │   └── AGENTS.md                  # Contexto e diretrizes do agente
-│
-└── Projeto de Referência
-    └── srag_agent/                # Projeto exemplo (Databricks + dbt + LLM)
 ```
 
 ### Fluxo de Dados
@@ -447,9 +444,10 @@ Saída: Repositório clonado e carregado.
 
 | Precedência | Origem | Comportamento |
 |---|---|---|
-| 1 | `PROJECT_PATH` em `.env` | Repositório padrão na inicialização |
+| 1 | `PROJECT_PATH` em `.env` | Repositório configurado na inicialização |
 | 2 | URL fornecida via chat | Sobrescreve PROJECT_PATH durante sessão |
-| 3 | Padrão | `./srag_agent` (se nenhuma configuração) |
+
+**Importante:** Você **deve** configurar um repositório. Sem configuração, o agente não funciona.
 
 ### Limite de Contexto por Análise
 

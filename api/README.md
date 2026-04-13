@@ -20,8 +20,19 @@ uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
 O servidor sobe em `http://localhost:8000`.
 
+### ⚠️ Aviso de Segurança
+
+Se já há algo rodando na porta 8000, mude a porta:
+
+```bash
+uvicorn api.main:app --reload --port 9000
+# Acesse em http://localhost:9000
+```
+
+**A API não tem autenticação.** Se exposta publicamente, qualquer pessoa pode acessá-la. Use apenas em ambientes locais ou com um proxy reverso (nginx) com autenticação.
+
 > **Hot-reload**: `--reload` detecta mudanças nos arquivos e reinicia automaticamente.  
-> Em produção, remova `--reload` e use um process manager (ex: `gunicorn` com workers uvicorn).
+> Para desenvolvimento local é seguro. Para qualquer outra coisa, não exponha a porta 8000 publicamente.
 
 ## Documentação interativa
 

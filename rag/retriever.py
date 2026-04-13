@@ -203,8 +203,8 @@ class Retriever:
         reranker_name: str = RERANKER_MODEL,
     ) -> "Retriever":
         """Carrega o índice FAISS, metadados, bi-encoder e cross-encoder do disco."""
-        index_path = os.path.join(index_dir, "srag.index")
-        metadata_path = os.path.join(index_dir, "srag_metadata.json")
+        index_path = os.path.join(index_dir, "lupus.index")
+        metadata_path = os.path.join(index_dir, "metadata.json")
 
         if not os.path.exists(index_path):
             raise FileNotFoundError(

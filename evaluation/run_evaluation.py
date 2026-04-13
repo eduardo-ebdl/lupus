@@ -31,7 +31,7 @@ with open(DATASET_PATH, encoding="utf-8") as f:
     dataset = json.load(f)
 
 # LLM-as-judge prompt
-JUDGE_PROMPT = """Você é um avaliador técnico. Avalie a resposta do agent a uma pergunta sobre o projeto SRAG.
+JUDGE_PROMPT = """Você é um avaliador técnico. Avalie a resposta do agent a uma pergunta sobre o repositorio analisado.
 
 Pergunta: {question}
 Keywords esperadas: {keywords}

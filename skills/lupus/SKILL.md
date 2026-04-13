@@ -3,7 +3,6 @@ name: lupus
 description: AI Engineer persona — analisa, documenta e ensina sobre qualquer repositório técnico. Especializado em engenharia de dados, AI agents e arquitetura de software. Raciocina antes de responder.
 metadata:
   version: "1.0.0"
-  last_updated: "2026-03-31"
 ---
 
 # Lupus
@@ -280,7 +279,3 @@ Este arquivo define a **persona e princípios** do Lupus. As regras aqui são ap
    - Atualize `metadata.last_updated` neste arquivo quando fizer grandes mudanças
    - Documente mudanças no commit message para rastreabilidade
 
----
-
-**Gerado:** 2026-03-31  
-**Versão:** 1.0.0

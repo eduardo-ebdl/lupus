@@ -1,122 +1,122 @@
-# Lupus Test Suite
+# Suite de Testes do Lupus
 
-## Overview
+## Visão Geral
 
-Lupus uses **pytest** for unit testing. Tests are organized by category and focus on fast, isolated validation of core functionality without external dependencies (LLM, file I/O, network).
+Lupus usa **pytest** para testes unitários. Os testes são organizados por categoria e focam em validação rápida e isolada da funcionalidade central sem dependências externas (LLM, I/O, rede).
 
-## Structure
+## Estrutura
 
 ```
 tests/
 ├── __init__.py
-├── README.md (this file)
-├── conftest.py          # Shared fixtures and configuration
+├── README.md (este arquivo)
+├── conftest.py          # Fixtures compartilhadas e configuração
 │
-└── unit/                # Unit tests (fast, mocked)
+└── unit/                # Testes unitários (rápidos, com mock)
     ├── __init__.py
-    ├── test_cache.py              # Cache module tests (make_key, get, set, TTL)
-    ├── test_config.py             # Configuration tests (MAX_CONTEXT_BYTES, make_agent)
-    ├── test_project_discovery.py  # Project discovery (Python framework, data files)
-    ├── test_retriever.py          # Retriever singleton and thread safety
-    └── test_repository_explorer.py # Repository exploration (file tree, file types)
+    ├── test_cache.py              # Testes do cache (make_key, get, set, TTL)
+    ├── test_config.py             # Testes de configuração (MAX_CONTEXT_BYTES, make_agent)
+    ├── test_project_discovery.py  # Discovery de projeto (frameworks, arquivos de dados)
+    ├── test_retriever.py          # Singleton retriever e thread safety
+    └── test_repository_explorer.py # Exploração de repositório (árvore, tipos)
 ```
 
-## Running Tests
+## Executando Testes
 
-### Run all tests
+### Executar todos os testes
 ```bash
 pytest tests/
 ```
 
-### Run only unit tests
+### Executar apenas testes unitários
 ```bash
 pytest tests/unit/ -m unit
 ```
 
-### Run specific test file
+### Executar arquivo específico
 ```bash
 pytest tests/unit/test_cache.py -v
 ```
 
-### Run specific test class
+### Executar classe de teste específica
 ```bash
 pytest tests/unit/test_cache.py::TestCacheKeyGeneration -v
 ```
 
-### Run specific test
+### Executar teste específico
 ```bash
 pytest tests/unit/test_cache.py::TestCacheKeyGeneration::test_make_key_basic -v
 ```
 
-### Run with coverage report
+### Executar com relatório de cobertura
 ```bash
 pytest tests/ --cov=. --cov-report=html
 ```
 
-## Test Markers
+## Marcadores de Teste
 
-Tests use pytest markers for organization:
+Os testes usam marcadores pytest para organização:
 
 ```bash
-# Run only unit tests
+# Executar apenas testes unitários
 pytest -m unit
 
-# Run only integration tests (if added later)
+# Executar apenas testes de integração (se adicionados depois)
 pytest -m integration
 ```
 
 ## Fixtures
 
-Common fixtures are defined in `conftest.py`:
+Fixtures comuns estão definidas em `conftest.py`:
 
 ### `temp_project_dir`
-Creates a temporary directory for testing. Automatically cleaned up.
+Cria um diretório temporário para testes. Limpado automaticamente.
 
 ```python
 def test_something(temp_project_dir):
-    # temp_project_dir is a string path to a temporary directory
+    # temp_project_dir é um caminho string para diretório temporário
     file_path = os.path.join(temp_project_dir, "test.txt")
 ```
 
 ### `mock_project_files`
-Creates a mock project with realistic files (Python, dbt, data, docs). Inherits `temp_project_dir`.
+Cria um projeto mock com arquivos realistas (Python, dbt, dados, docs). Herda `temp_project_dir`.
 
 ```python
 def test_discover(mock_project_files):
-    # mock_project_files is a Path object with main.py, dbt_project.yml, data files, etc.
+    # mock_project_files é um objeto Path com main.py, dbt_project.yml, etc.
     assert (mock_project_files / "main.py").exists()
 ```
 
 ### `mock_ctx_manager`
-Mock ProjectContextManager pointing to temp directory.
+Mock ProjectContextManager apontando para diretório temporário.
 
 ```python
 def test_with_context(mock_ctx_manager):
-    # mock_ctx_manager.path == temp directory path
+    # mock_ctx_manager.path == caminho do diretório temporário
     assert mock_ctx_manager.context.path is not None
 ```
 
 ### `mock_checkpointer`
-Mock Checkpointer for testing (avoids SQLite I/O).
+Mock Checkpointer para testes (evita I/O do SQLite).
 
 ```python
 def test_agent_with_mock_checkpointer(mock_checkpointer):
     agent = make_agent(checkpointer=mock_checkpointer)
-    # No ~/.lupus filesystem pollution
+    # Sem poluição do filesystem ~/.lupus
 ```
 
 ### `isolate_config`
-Patches environment variables safely for config testing.
+Faz patch de variáveis de ambiente com segurança para testes de config.
 
 ```python
 def test_custom_config(isolate_config):
     isolate_config.setenv("LUPUS_MAX_CONTEXT_BYTES", "20000")
-    # Changes are isolated to this test
+    # Mudanças são isoladas para este teste
 ```
 
-## Mocking Strategies
+## Estratégias de Mock
 
-### Mock filesystem
+### Mock de filesystem
 ```python
 from pathlib import Path
 import tempfile
@@ -127,82 +127,82 @@ def test_file_reading(mock_project_files):
     assert len(content) > 0
 ```
 
-### Mock external services
+### Mock de serviços externos
 ```python
 from unittest.mock import patch, MagicMock
 
 def test_agent():
     with patch("config.ChatGoogleGenerativeAI") as mock_llm:
         mock_llm.return_value = MagicMock()
-        # Code that uses ChatGoogleGenerativeAI won't make API calls
+        # Código usando ChatGoogleGenerativeAI não faz chamadas de API
 ```
 
-### Mock context manager
+### Mock de gerenciador de contexto
 ```python
 def test_with_project_path():
     with patch("core.context_manager.get_project_path", return_value="/tmp/test"):
-        # Functions using get_project_path will see /tmp/test
+        # Funções usando get_project_path verão /tmp/test
 ```
 
-## What NOT to Test
+## O que NÃO testar
 
-- **Don't test LLM behavior** — mock `ChatGoogleGenerativeAI`, don't call it
-- **Don't test real file I/O** — use `mock_project_files` fixture instead of creating files
-- **Don't test network** — mock `clone_repository` and GitHub API calls
-- **Don't test database** — use `mock_checkpointer` instead of SQLite
+- **Não teste comportamento de LLM** — faça mock de `ChatGoogleGenerativeAI`, não chame
+- **Não teste I/O real** — use fixture `mock_project_files` ao invés de criar arquivos
+- **Não teste rede** — faça mock de `clone_repository` e chamadas de GitHub API
+- **Não teste banco de dados** — use `mock_checkpointer` ao invés de SQLite
 
-## Adding New Tests
+## Adicionando Novos Testes
 
-### Step 1: File Structure
+### Passo 1: Estrutura de Arquivo
 
-Test files mirror module structure:
+Arquivos de teste espelham a estrutura de módulos:
 - `tools/cache.py` → `tests/unit/test_cache.py`
 - `rag/retriever.py` → `tests/unit/test_retriever.py`
 
-### Step 2: Template Copy/Paste
+### Passo 2: Template Copy/Paste
 
 ```python
 import pytest
 from pathlib import Path
-from tools.your_module import your_function
+from tools.seu_modulo import sua_funcao
 
 @pytest.mark.unit
-class TestYourFunctionality:
-    """Test suite for your_function"""
+class TestSuaFuncionalidade:
+    """Suite de testes para sua_funcao"""
     
-    def test_basic_case(self, mock_project_files):
-        """Test basic behavior"""
+    def test_caso_basico(self, mock_project_files):
+        """Teste comportamento básico"""
         # Setup
-        input_data = "test"
+        dados_entrada = "teste"
         
-        # Execute
-        result = your_function(input_data)
+        # Executa
+        resultado = sua_funcao(dados_entrada)
         
-        # Assert
-        assert result is not None
-        assert isinstance(result, str)
+        # Assertiva
+        assert resultado is not None
+        assert isinstance(resultado, str)
     
-    def test_edge_case(self):
-        """Test edge case (empty, None, etc)"""
-        result = your_function("")
-        assert result == expected_output
+    def test_caso_extremo(self):
+        """Teste caso extremo (vazio, None, etc)"""
+        resultado = sua_funcao("")
+        assert resultado == saida_esperada
     
-    def test_error_handling(self):
-        """Test error conditions"""
+    def test_tratamento_erro(self):
+        """Teste condições de erro"""
         with pytest.raises(ValueError):
-            your_function(invalid_input)
+            sua_funcao(entrada_invalida)
 ```
 
-### Step 3: Naming Conventions
+### Passo 3: Convenções de Nomenclatura
 
-| Item | Pattern | Example |
-|------|---------|---------|
-| Test file | `test_<module_name>.py` | `test_cache.py` |
-| Test class | `Test<Feature>` | `TestCacheKeyGeneration` |
-| Test method | `test_<scenario>` | `test_make_key_with_spaces` |
-| Fixture | `<type>_<description>` | `mock_project_files`, `temp_dir` |
+| Item | Padrão | Exemplo |
+|------|--------|---------|
+| Arquivo de teste | `test_<nome_modulo>.py` | `test_cache.py` |
+| Classe de teste | `Test<Funcionalidade>` | `TestCacheKeyGeneration` |
+| Método de teste | `test_<cenario>` | `test_make_key_with_spaces` |
+| Fixture | `<tipo>_<descricao>` | `mock_project_files`, `temp_dir` |
 
-### Step 4: Example: Testing a New Tool
+### Passo 4: Exemplo: Testando Uma Ferramenta Nova
 
 Se você adicionou uma ferramenta `analyze_code_quality`, aqui está o teste:
 
@@ -214,10 +214,10 @@ from tools.code_quality import analyze_code_quality
 
 @pytest.mark.unit
 class TestCodeQualityAnalyzer:
-    """Tests for analyze_code_quality tool"""
+    """Testes para ferramenta analyze_code_quality"""
     
     def test_analyze_python_file(self, mock_project_files):
-        """Test basic code analysis"""
+        """Teste análise básica de código"""
         file_path = mock_project_files / "main.py"
         
         result = analyze_code_quality(str(file_path))
@@ -227,12 +227,12 @@ class TestCodeQualityAnalyzer:
         assert len(result["issues"]) >= 0
     
     def test_analyze_nonexistent_file(self):
-        """Test behavior with missing file"""
+        """Teste comportamento com arquivo faltando"""
         with pytest.raises(FileNotFoundError):
             analyze_code_quality("/nonexistent/path.py")
     
     def test_analyze_supports_multiple_languages(self, mock_project_files):
-        """Test multi-language support (Python, JS, SQL)"""
+        """Teste suporte a múltiplas linguagens (Python, JS, SQL)"""
         # Python
         result_py = analyze_code_quality(str(mock_project_files / "main.py"))
         assert "python" in result_py.get("language", "").lower()
@@ -242,73 +242,67 @@ class TestCodeQualityAnalyzer:
         assert "sql" in result_sql.get("language", "").lower()
 ```
 
-**Rodando:**
+**Executando:**
 ```bash
 pytest tests/unit/test_code_quality.py -v
 ```
 
-### Step 5: Best Practices
+### Passo 5: Boas Práticas
 
-1. **Use fixtures** — leverage `conftest.py` fixtures instead of writing setup code:
+1. **Use fixtures** — aproveite fixtures de `conftest.py` ao invés de escrever código de setup:
    ```python
-   def test_something(mock_project_files):  # Injects fixture
+   def test_something(mock_project_files):  # Injeta fixture
        result = some_function(str(mock_project_files))
    ```
 
-2. **Mark as unit** — all tests should have `@pytest.mark.unit`
+2. **Marque como unit** — todos os testes devem ter `@pytest.mark.unit`
    ```python
    @pytest.mark.unit
-   class TestSomething:
+   class TestAlgo:
        def test_case(self):
            pass
    ```
 
-3. **Keep tests focused** — one assertion per test when possible:
+3. **Mantenha testes focados** — uma assertiva por teste quando possível:
    ```python
    def test_caching_stores_value(self):
        set("key", "value")
        assert get("key") == "value"
 
    def test_caching_respects_ttl(self):
-       # TTL testing in separate test
+       # Teste de TTL em teste separado
    ```
 
-4. **Use descriptive names** — test names should describe what they test:
+4. **Use nomes descritivos** — nomes de teste devem descrever o que testam:
    ```python
-   def test_make_key_consistency(self):  # ✓ Good
-   def test_key(self):                  # ✗ Too generic
+   def test_make_key_consistency(self):  # ✓ Bom
+   def test_key(self):                  # ✗ Muito genérico
    ```
 
-## Continuous Integration
+## Integração Contínua
 
-Currently, there is no GitHub Actions CI configured. To add:
+Atualmente não há GitHub Actions CI configurada. Para adicionar:
 
-1. Create `.github/workflows/tests.yml`
-2. Configure to run `pytest tests/` on each PR
-3. Require passing tests before merge
+1. Crie `.github/workflows/tests.yml`
+2. Configure para rodar `pytest tests/` em cada PR
+3. Exija testes passando antes de merge
 
-See MAINTENANCE.md for future CI setup tasks.
+## Resolução de Problemas
 
-## Troubleshooting
-
-### Fixture not found
+### Fixture não encontrada
 ```
 fixture 'temp_project_dir' not found
 ```
-→ Make sure `conftest.py` is in the test directory and pytest discovers it.
+→ Certifique-se que `conftest.py` está no diretório de testes e pytest a descobre.
 
-### Import errors
+### Erros de import
 ```
 ModuleNotFoundError: No module named 'tools'
 ```
-→ Make sure you run `pytest` from the project root: `pytest tests/`
+→ Certifique-se que você roda `pytest` da raiz do projeto: `pytest tests/`
 
-### Mock not working
+### Mock não funciona
 ```
 Expected mock to be called, but it wasn't
 ```
-→ Check patch path: use `patch("module.ClassName")` not `patch("ClassName")`
-
----
-
-**Last updated:** 2026-03-31
+→ Verifique caminho do patch: use `patch("module.ClassName")` não `patch("ClassName")`

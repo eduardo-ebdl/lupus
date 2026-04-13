@@ -28,7 +28,7 @@ _MAX_PYTHON_CHUNK_CHARS = 4000
 INDEXED_EXTENSIONS = {".py", ".sql", ".yml", ".yaml", ".md", ".ipynb"}
 IGNORED_PATTERNS = {
     "requirements.txt", "LICENSE", ".env", ".env.example",
-    "srag_agent_v1_outputs.ipynb",  # só outputs, sem código limpo
+    "*_outputs.ipynb",  # jupyter outputs, sem código limpo
 }
 
 
@@ -63,10 +63,9 @@ def _detect_layer(file_path: str) -> str:
         return "models"
     if "/utils/" in p or "/helpers/" in p:
         return "utils"
-    # Projetos específicos do srag_agent
-    if "ai_agent" in p:
-        return "ai_agent"
-    if "agent_srag_pipeline" in p or "pipeline" in p:
+    if "/agent" in p or "agent" in p:
+        return "agent"
+    if "/pipeline" in p or "pipeline" in p:
         return "pipeline"
     return "root"
 
@@ -233,10 +232,10 @@ def _chunk_markdown(file_path: str, rel_path: str) -> list[dict]:
     return chunks
 
 
-def collect_chunks(srag_root: str) -> list[dict]:
-    """Percorre o srag_agent/ e gera todos os chunks indexáveis."""
+def collect_chunks(repo_root: str) -> list[dict]:
+    """Percorre o repositório e gera todos os chunks indexáveis."""
     chunks = []
-    base = os.path.abspath(srag_root)
+    base = os.path.abspath(repo_root)
 
     for root, dirs, files in os.walk(base):
         # Ignora diretórios irrelevantes
@@ -350,8 +349,8 @@ def save_index(index: Any, chunks: list[dict], output_dir: str, repo_path: str =
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    index_path = os.path.join(output_dir, "srag.index")
-    metadata_path = os.path.join(output_dir, "srag_metadata.json")
+    index_path = os.path.join(output_dir, "lupus.index")
+    metadata_path = os.path.join(output_dir, "metadata.json")
 
     faiss.write_index(index, index_path)
 

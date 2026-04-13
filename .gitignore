@@ -15,7 +15,6 @@ venv/
 # Project-specific
 prompts/
 contexto*.xml
-srag_agent/.git/
 
 # RAG — índice gerado offline (rebuild com scripts/build_rag_index.py)
 rag/index/
@@ -27,7 +26,6 @@ feedback/log.json
 *.db
 docs/
 feedback/
-srag_agent/
 backlog.md
 
 # Notebooks — uso pessoal/estudo, não versionado

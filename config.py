@@ -52,10 +52,10 @@ except (ValueError, TypeError):
 # Diretório raiz do projeto (onde este arquivo está)
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 
-# Inicializa ctx_manager a partir de env var ou demo padrão.
+# Inicializa ctx_manager a partir de env var.
 # Registra hooks para invalidar cache e RAG quando o repositório muda.
-_DEFAULT_PROJECT = os.path.join(_ROOT, "srag_agent")
-ctx_manager.init_from_env(default_path=_DEFAULT_PROJECT)
+# Nota: Não há repositório padrão — usuário deve configurar PROJECT_PATH ou fornecer URL.
+ctx_manager.init_from_env(default_path=None)
 
 from tools.cache import on_repo_change as _cache_on_repo_change
 from tools.rag_search import on_repo_change as _rag_on_repo_change
@@ -137,7 +137,8 @@ def make_agent(system_prompt: str = SYSTEM_PROMPT, checkpointer=None):
     llm = build_llm()
 
     # Lê path do ctx_manager (atualizado automaticamente por clone_repository)
-    current_project_path = ctx_manager.path or _DEFAULT_PROJECT
+    # Se nenhum repositório foi configurado, tools funcionam mas sem contexto real
+    current_project_path = ctx_manager.path or _ROOT
     project_backend = FilesystemBackend(
         root_dir=current_project_path, virtual_mode=True
     )
