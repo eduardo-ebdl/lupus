@@ -2,6 +2,23 @@
 
 Documentação para contribuidores que modificam regras, comportamento ou configuração do Lupus.
 
+---
+
+## 📋 Tabela de Decisão: Qual Arquivo Alterar?
+
+| Sua mudança | Arquivo | Exemplo |
+|-------------|---------|---------|
+| Trocar LLM (Gemini → Claude → OpenAI) | `.env` + `MAINTENANCE.md` (instruções) | `LLM_PROVIDER=claude` |
+| Adicionar nova specialty (ex: Kubernetes) | `SKILL.md` → `config.py` | "Especialidades: ... Kubernetes" |
+| Alterar ordem de execução de tools | `config.py` SYSTEM_PROMPT | "Sempre chame discover_project primeiro" |
+| Mudar tom/estilo de resposta | `SKILL.md` ("Tom e estilo") | "Adicionar mais emojis" ou "remover saudações" |
+| Adicionar limite novo (ex: max tokens) | `config.py` + `.env.example` | `LUPUS_MAX_TOKENS=4000` |
+| Documentar novo comportamento | Vários (leia planejamento abaixo) | Não comece editando; primeiro planeje |
+
+**Regra ouro:** Se mexer em identidade ou Tom → edite `SKILL.md` PRIMEIRO. Se mexer em comportamento operacional → edite `config.py` SYSTEM_PROMPT.
+
+---
+
 ## Como Trocar de LLM
 
 O Lupus usa uma camada de abstração em `llm_provider.py` — basta configurar variáveis no `.env`, sem tocar no código.
@@ -187,8 +204,33 @@ metadata:
 ## Problemas Comuns
 
 ### "Fiz mudança em SKILL.md mas o agente não mudou"
-→ Isso é esperado. SKILL.md é carregado pelo SkillsMiddleware.
-→ Se mudança é operacional (tool-calling), também edite `config.py` SYSTEM_PROMPT.
+
+**Passo a passo para debug:**
+
+1. **Identifique o tipo de mudança:**
+   - Persona/tom/specialty → deve estar em SKILL.md
+   - Behavior/tool-calling → deve estar em config.py SYSTEM_PROMPT
+
+2. **Se mudança é em SKILL.md:**
+   - Salvou o arquivo? (`git status` deve mostrar `skills/lupus/SKILL.md`)
+   - Reiniciou o agente? (Ctrl+C e `python main.py` novamente)
+   - SKILL.md é carregado pelo SkillsMiddleware no startup
+
+3. **Se mudança é operacional (tool-calling):**
+   - Você atualizou **ambos** SKILL.md E config.py SYSTEM_PROMPT?
+   - Exemplo: se disse "sempre chame discover_project primeiro", isso deve estar em config.py, não só em SKILL.md
+
+4. **Rode validação:**
+   ```bash
+   python scripts/validate_skill_consistency.py
+   ```
+   Se retorna ❌ MISMATCH, tem conflito entre SKILL.md e config.py
+
+**Checklist:**
+- ✅ Mudança foi salva (git status)
+- ✅ Agente foi reiniciado
+- ✅ Se mudança é operacional, ambos arquivos foram alterados
+- ✅ validate_skill_consistency.py passa
 
 ### "Validation script diz mismatch"
 → Execute: `python scripts/validate_skill_consistency.py`

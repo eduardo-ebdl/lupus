@@ -153,17 +153,109 @@ def test_with_project_path():
 
 ## Adding New Tests
 
-1. **Identify the module** — test files mirror module structure:
-   - `tools/cache.py` → `tests/unit/test_cache.py`
-   - `rag/retriever.py` → `tests/unit/test_retriever.py`
+### Step 1: File Structure
 
-2. **Use fixtures** — leverage `conftest.py` fixtures instead of writing setup code:
+Test files mirror module structure:
+- `tools/cache.py` → `tests/unit/test_cache.py`
+- `rag/retriever.py` → `tests/unit/test_retriever.py`
+
+### Step 2: Template Copy/Paste
+
+```python
+import pytest
+from pathlib import Path
+from tools.your_module import your_function
+
+@pytest.mark.unit
+class TestYourFunctionality:
+    """Test suite for your_function"""
+    
+    def test_basic_case(self, mock_project_files):
+        """Test basic behavior"""
+        # Setup
+        input_data = "test"
+        
+        # Execute
+        result = your_function(input_data)
+        
+        # Assert
+        assert result is not None
+        assert isinstance(result, str)
+    
+    def test_edge_case(self):
+        """Test edge case (empty, None, etc)"""
+        result = your_function("")
+        assert result == expected_output
+    
+    def test_error_handling(self):
+        """Test error conditions"""
+        with pytest.raises(ValueError):
+            your_function(invalid_input)
+```
+
+### Step 3: Naming Conventions
+
+| Item | Pattern | Example |
+|------|---------|---------|
+| Test file | `test_<module_name>.py` | `test_cache.py` |
+| Test class | `Test<Feature>` | `TestCacheKeyGeneration` |
+| Test method | `test_<scenario>` | `test_make_key_with_spaces` |
+| Fixture | `<type>_<description>` | `mock_project_files`, `temp_dir` |
+
+### Step 4: Example: Testing a New Tool
+
+Se você adicionou uma ferramenta `analyze_code_quality`, aqui está o teste:
+
+```python
+# tests/unit/test_code_quality.py
+
+import pytest
+from tools.code_quality import analyze_code_quality
+
+@pytest.mark.unit
+class TestCodeQualityAnalyzer:
+    """Tests for analyze_code_quality tool"""
+    
+    def test_analyze_python_file(self, mock_project_files):
+        """Test basic code analysis"""
+        file_path = mock_project_files / "main.py"
+        
+        result = analyze_code_quality(str(file_path))
+        
+        assert "complexity" in result
+        assert "issues" in result
+        assert len(result["issues"]) >= 0
+    
+    def test_analyze_nonexistent_file(self):
+        """Test behavior with missing file"""
+        with pytest.raises(FileNotFoundError):
+            analyze_code_quality("/nonexistent/path.py")
+    
+    def test_analyze_supports_multiple_languages(self, mock_project_files):
+        """Test multi-language support (Python, JS, SQL)"""
+        # Python
+        result_py = analyze_code_quality(str(mock_project_files / "main.py"))
+        assert "python" in result_py.get("language", "").lower()
+        
+        # SQL
+        result_sql = analyze_code_quality(str(mock_project_files / "query.sql"))
+        assert "sql" in result_sql.get("language", "").lower()
+```
+
+**Rodando:**
+```bash
+pytest tests/unit/test_code_quality.py -v
+```
+
+### Step 5: Best Practices
+
+1. **Use fixtures** — leverage `conftest.py` fixtures instead of writing setup code:
    ```python
    def test_something(mock_project_files):  # Injects fixture
        result = some_function(str(mock_project_files))
    ```
 
-3. **Mark as unit** — all tests should have `@pytest.mark.unit`
+2. **Mark as unit** — all tests should have `@pytest.mark.unit`
    ```python
    @pytest.mark.unit
    class TestSomething:
@@ -171,7 +263,7 @@ def test_with_project_path():
            pass
    ```
 
-4. **Keep tests focused** — one assertion per test when possible:
+3. **Keep tests focused** — one assertion per test when possible:
    ```python
    def test_caching_stores_value(self):
        set("key", "value")
@@ -181,7 +273,7 @@ def test_with_project_path():
        # TTL testing in separate test
    ```
 
-5. **Use descriptive names** — test names should describe what they test:
+4. **Use descriptive names** — test names should describe what they test:
    ```python
    def test_make_key_consistency(self):  # ✓ Good
    def test_key(self):                  # ✗ Too generic

@@ -2,6 +2,36 @@
 
 Documentação detalhada de todas as 17 ferramentas disponíveis no Lupus, agrupadas em 5 categorias.
 
+---
+
+## ⚡ Cheat Sheet — 17 Ferramentas
+
+| # | Ferramenta | O que faz | Quando usar |
+|---|-----------|----------|----------|
+| **Discovery (5)** | | | |
+| 1 | `discover_project` | Detecta stack tecnológico | Primeira pergunta sobre o projeto |
+| 2 | `explore_repository` | Enumera estrutura de arquivos | Visão geral completa; entrada para `suggest_improvements` |
+| 3 | `read_data_file` | Lê CSV, JSON, Parquet, Excel | Quando há dados locais no repositório |
+| 4 | `clone_repository` | Clona repo GitHub | Trocar de repositório (mas veja `analyze_full_repository`) |
+| 5 | `analyze_full_repository` | Clone + explore + read em 1x | ✅ Sempre que usuário enviar URL GitHub |
+| **Domain (7)** | | | |
+| 6 | `get_project_architecture` | Análise de camadas e arquitetura | "Qual a arquitetura?" |
+| 7 | `analyze_dbt_model` | SQL, dependências, testes de 1 modelo | Detalhes de modelo dbt específico |
+| 8 | `map_data_lineage` | Origem → transformações → destino | "Como dados fluem?" |
+| 9 | `analyze_pipeline_config` | Jobs, schedule, orquestração | "Qual o schedule?" |
+| 10 | `get_data_dictionary` | Schema, colunas, tipos, descrições | "Quais colunas existem?" |
+| 11 | `map_code_dependencies` | Grafo de imports, módulos centrais | "Qual arquivo mais importado?" |
+| 12 | `get_agent_tools_spec` | LLM config, tools, guardrails | Repositórios com AI agents |
+| **Síntese (4)** | | | |
+| 13 | `analyze_code` | Lê + explica arquivo específico | "Explique o arquivo X" |
+| 14 | `generate_documentation` | Gera Markdown ou ABNT | Produzir documentação automática |
+| 15 | `review_architecture` | Análise crítica de decisões | "Por que fizeram Y?" |
+| 16 | `suggest_improvements` | Sugestões priorizadas | "Quais melhorias?" |
+| **RAG (1)** | | | |
+| 17 | `search_codebase` | Busca semântica no código | "Como é criado o campo X?" |
+
+---
+
 ## Discovery Tools (5)
 
 Ferramentas para exploração inicial e mapeamento do repositório.
@@ -23,6 +53,8 @@ Ferramentas para exploração inicial e mapeamento do repositório.
 "Tem dbt?"
 "Detecta Python ou Node?"
 ```
+
+**⚠️ Armadilha comum:** Não detecta linguagens minoritárias (Scala, Rust, Kotlin). Use `explore_repository` para lista completa de tipos de arquivo.
 
 ### `explore_repository`
 **Propósito:** Enumera estrutura de arquivos com análise de padrões.
@@ -68,6 +100,8 @@ Ferramentas para exploração inicial e mapeamento do repositório.
 - Mantém últimos 5 arquivos automaticamente
 - Dispara hooks para invalidar RAG cache
 
+**⚠️ Armadilha comum:** Use `analyze_full_repository` ao invés desta quando o usuário quer **análise completa**. `clone_repository` apenas clona; `analyze_full_repository` clona + explora + analisa em 1x.
+
 ### `analyze_full_repository`
 **Propósito:** Pipeline integrado: clona + explora + lê arquivos + mapeia dependências em uma única chamada.
 
@@ -82,13 +116,15 @@ Ferramentas para exploração inicial e mapeamento do repositório.
 - Resumo de dependências
 
 **Quando usar:**
-- Quando o usuário envia uma URL e quer análise completa imediatamente
-- Melhor que chamar `clone_repository` + múltiplas outras ferramentas
+- ✅ Quando o usuário envia uma URL e quer análise completa imediatamente
+- ✅ Melhor que chamar `clone_repository` + múltiplas outras ferramentas
 
 **Exemplo de uso:**
 ```
 "Analise https://github.com/user/repo"
 ```
+
+**⚠️ Armadilha comum:** Essa ferramenta é pesada (leva 10-30s dependendo do tamanho do repo). Se o usuário só quer clonar rápido, use `clone_repository`.
 
 ### `read_data_file`
 **Propósito:** Lê e analisa dados estruturados (CSV, JSON, Parquet, Excel).
@@ -390,22 +426,64 @@ Ferramentas que sintetizam análises através de invocação interna do LLM.
 "Qual função trata dados nulos?"
 ```
 
+**⚠️ Armadilha comum:** Se o índice está desatualizado (você clonou novo repo), a busca retorna resultados do repo antigo. Execute `python scripts/build_rag_index.py` para reindexar.
+
 ---
 
 ## Dicas de Uso
 
 ### Combinando Tools
-Muitos casos de uso combinam várias ferramentas automaticamente:
 
+Muitos casos de uso combinam várias ferramentas automaticamente. Aqui estão padrões práticos:
+
+#### Exemplo 1: Análise de novo repositório
 ```
-"Qual a arquitetura?" 
-→ discover_project + get_project_architecture
+Pergunta: "Analisa https://github.com/dbt-labs/jaffle_shop"
 
-"Explique a linhagem de dados até Gold"
-→ discover_project + map_data_lineage + analyze_dbt_model
+Ferramentas chamadas:
+1. analyze_full_repository(url) — clona + explora + lê arquivos
+2. Com resultado, agent chama get_project_architecture automaticamente
+3. Retorna: stack, arquitetura, principais módulos
 
-"Sugira melhorias em testes"
-→ discover_project + explore_repository + suggest_improvements (focus="testes")
+Resultado final: Análise completa em 1 pergunta
+```
+
+#### Exemplo 2: Entender fluxo de dados
+```
+Pergunta: "Como os dados fluem do Bronze ao Gold?"
+
+Ferramentas chamadas:
+1. discover_project — confirma que é projeto dbt
+2. map_data_lineage — obtém grafo completo
+3. analyze_dbt_model (para 2-3 modelos-chave) — SQL e transformações
+4. get_data_dictionary (layer=gold) — schema final
+
+Resultado: Fluxo visual com exemplos de SQL
+```
+
+#### Exemplo 3: Sugestões contextualizadas
+```
+Pergunta: "Quais melhorias você sugere?"
+
+Ferramentas chamadas:
+1. discover_project — detecta stack e padrões
+2. explore_repository — estrutura completa
+3. map_code_dependencies — acoplamento, entry points
+4. suggest_improvements (focus=None) — análise com tudo isso
+
+Resultado: Sugestões priorizadas por categoria (arquitetura, testes, segurança, performance)
+```
+
+#### Exemplo 4: Buscar implementação específica
+```
+Pergunta: "Onde é criado o campo idade_normalizada?"
+
+Ferramentas chamadas:
+1. search_codebase(query="idade_normalizada") — busca híbrida
+2. Se encontrar, retorna arquivo + trecho de código
+3. Se precisar mais detalhe, analyze_code(arquivo) — explicação completa
+
+Resultado: Implementação encontrada + explicação
 ```
 
 ### Ordem recomendada para novo repositório

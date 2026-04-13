@@ -51,7 +51,7 @@ curl -X POST http://localhost:8000/chat \
 }
 ```
 
-**Response:**
+**Response (200 OK):**
 ```json
 {
   "response": "A arquitetura segue o padrão Medallion...",
@@ -62,6 +62,57 @@ curl -X POST http://localhost:8000/chat \
 ```
 
 > `session_id` funciona como o `thread_id` do LangGraph — conversas com o mesmo ID compartilham histórico.
+
+#### Exemplo: Conversa Multi-Turn
+
+```bash
+# Mensagem 1 — análise inicial
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Analisa https://github.com/dbt-labs/jaffle_shop",
+    "session_id": "session-abc123"
+  }'
+
+# Response: Stack detectada, arquitetura descrita
+
+---
+
+# Mensagem 2 — follow-up (mesmo session_id)
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Como é feita a linhagem de dados?",
+    "session_id": "session-abc123"
+  }'
+
+# Response: Agent já tem contexto do jaffle_shop, responde sobre linhagem
+```
+
+#### Respostas de Erro
+
+**HTTP 400** — Bad Request (input inválido):
+```json
+{
+  "detail": "message field is required"
+}
+```
+
+**HTTP 500** — Internal Server Error (agente falhou):
+```json
+{
+  "detail": "Agent crashed during execution",
+  "request_id": "xyz789"
+}
+```
+
+**HTTP 503** — Service Unavailable (agente não inicializou):
+```json
+{
+  "detail": "Agent not available",
+  "status": "degraded"
+}
+```
 
 ---
 
@@ -143,6 +194,24 @@ api/
     ├── agent_service.py # Bridge assíncrona → agente Lupus
     └── eval_service.py  # Integração com LangSmith SDK
 ```
+
+## API vs CLI — Quando Usar Cada Uma
+
+| Cenário | CLI | API |
+|---------|-----|-----|
+| Uso local, interativo | ✅ Preferido | ❌ Overhead desnecessário |
+| Integração em aplicação Python | ❌ Subprocess é frágil | ✅ Chame direto a config.py |
+| Integração em aplicação externa (JavaScript, Go, etc) | ❌ Não funciona | ✅ Ideal |
+| Exposição para múltiplos usuários | ❌ 1 processo por usuário | ✅ 1 servidor, múltiplos clients |
+| Testing/automação de análises | ⚠️ Possível via subprocess | ✅ Preferido (request idempotente) |
+| Baixa latência (<5s) | ✅ Direto | ⚠️ Overhead de HTTP |
+
+**Recomendação:** 
+- **Desenvolvimento local:** CLI
+- **Produção / múltiplos usuários:** API
+- **Integração com outro sistema:** API
+
+---
 
 ## Variáveis de ambiente relevantes para a API
 

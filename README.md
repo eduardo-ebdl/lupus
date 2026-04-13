@@ -1,15 +1,44 @@
 # Lupus — AI Code Intelligence Agent
 
-Agente conversacional para análise de repositórios via interface de chat. O Lupus consulta os arquivos reais do projeto através de 17 ferramentas especializadas. Todas as respostas são fundamentadas no código-fonte analisado, sem extrapolações baseadas em conhecimento geral.
+**Projeto pessoal de estudos** em AI Engineering. Lupus é um agente conversacional para análise de repositórios — experimenta integração de LangGraph, ferramentas especializadas, busca semântica local e avaliação com LLM como juiz. 
 
-## Configuração
+O agente consulta os arquivos reais do projeto através de 17 ferramentas. Todas as respostas são fundamentadas no código-fonte analisado, sem extrapolações baseadas em conhecimento geral.
 
-Especifique qual repositório analisar através de:
-- **`.env`**: configure `PROJECT_PATH` com o caminho absoluto do repositório local
-- **Chat interativo**: forneça uma URL do GitHub e o agente realizará clone automático sem necessidade de restart
-- **Padrão**: se não configurado, analisa o projeto SRAG incluído no repositório
+---
 
-Implementado com [DeepAgents](https://github.com/deepagents) (LangChain + LangGraph) e Gemini 2.5 Flash.
+## ⚡ Quick Start
+
+```bash
+# Setup (2 min)
+git clone https://github.com/seu-usuario/lupus.git && cd lupus
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# Configure GOOGLE_API_KEY em https://aistudio.google.com/app/apikey
+
+# Rodar (primeira vez: ~2 min para build do índice RAG)
+python scripts/build_rag_index.py
+python main.py
+```
+
+Teste com: `"Qual a arquitetura do projeto?"` ou `"Analisa https://github.com/dbt-labs/jaffle_shop"`
+
+---
+
+## 📖 Índice
+
+- [Capacidades](#capacidades) — 17 ferramentas para análise de repositórios
+- [Arquitetura](#arquitetura) — Como funciona internamente
+- [Stack Tecnológico](#stack-tecnológico) — Ferramentas e bibliotecas
+- [Configuração](#configuração) — Setup, dependências e variáveis de ambiente
+- [Configuração de Repositório](#configuração-de-repositório) — Como especificar qual repo analisar
+- [Avaliação](#avaliação) — Métricas e dataset de teste
+- [LupusAPI](#lupusapi--camada-http) — REST API com FastAPI
+- [Troubleshooting](#troubleshooting) — Problemas comuns e soluções
+- [Blocos de Desenvolvimento](#blocos-de-desenvolvimento) — Histórico de implementação
+- [Learn More](#learn-more) — Outros documentos
+
+---
 
 ## Capacidades
 
@@ -67,44 +96,44 @@ A documentação gerada é salva automaticamente no diretório do projeto analis
 
 ```mermaid
 flowchart TD
-    User(["👤 Usuário<br/>(pergunta em português)"])
+    User(["👤 Usuário"])
     
-    User -->|texto| CLI["💻 Interface CLI<br/>(main.py + Rich)"]
+    User -->|pergunta| CLI["💻 CLI<br/>(main.py)"]
     
-    CLI -->|invoca| Agent["🤖 Agente LangGraph<br/>(config.py)"]
+    CLI -->|invoca| Agent["🤖 Agent<br/>(LangGraph)"]
     
-    Agent -->|lê persona| Skill["📋 SKILL.md<br/>(identidade Lupus)"]
+    Agent -->|carrega| Skill["📋 SKILL.md<br/>(persona)"]
     
-    Agent -->|decisão| Decision{"Qual ferramenta<br/>usar?"}
+    Agent -->|decisão| Decision{"Qual<br/>ferramenta?"}
     
     Decision -->|discovery| T1["🔍 discover_project<br/>explore_repository"]
     Decision -->|domínio| T2["📊 analyze_dbt_model<br/>map_data_lineage"]
     Decision -->|síntese| T3["✍️ generate_documentation<br/>review_architecture"]
-    Decision -->|busca| T4["🔎 search_codebase<br/>(RAG semântico)"]
+    Decision -->|busca| T4["🔎 search_codebase<br/>(RAG)"]
     
-    T1 --> Tools["Tools (17 total)<br/>leem repositório"]
+    T1 --> Tools["⚙️ 17 Tools<br/>leem repositório"]
     T2 --> Tools
     T3 --> Tools
     T4 --> Tools
     
-    Tools -->|resultados| LLM["⚡ Gemini 2.5 Flash<br/>(LLM)"]
+    Tools -->|resultado| LLM["⚡ Gemini<br/>2.5 Flash"]
     
-    LLM -->|síntese| Response["📝 Resposta<br/>(fundamentada no código)"]
+    LLM -->|síntese| Response["📝 Resposta<br/>(no código)"]
     
-    Response -->|output formatado| User
+    Response -->|output| User
     
-    style User fill:#f5f9fc
-    style CLI fill:#f0f8fc
-    style Agent fill:#e8f4f8
-    style Skill fill:#e0f0f6
-    style Decision fill:#d8ecf4
-    style T1 fill:#d0e8f2
-    style T2 fill:#d0e8f2
-    style T3 fill:#d0e8f2
-    style T4 fill:#d0e8f2
-    style Tools fill:#d8ecf4
-    style LLM fill:#e8f4f8
-    style Response fill:#f0f8fc
+    style User fill:#c7d2fe,stroke:#818cf8,stroke-width:2px,color:#333
+    style CLI fill:#ddd6fe,stroke:#a78bfa,stroke-width:2px,color:#333
+    style Agent fill:#fce7f3,stroke:#fbcfe8,stroke-width:2px,color:#333
+    style Skill fill:#fef3c7,stroke:#fde68a,stroke-width:2px,color:#333
+    style Decision fill:#d1fae5,stroke:#a7f3d0,stroke-width:2px,color:#333
+    style T1 fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
+    style T2 fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
+    style T3 fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
+    style T4 fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
+    style Tools fill:#ddd6fe,stroke:#a78bfa,stroke-width:2px,color:#333
+    style LLM fill:#fef3c7,stroke:#fde68a,stroke-width:2px,color:#333
+    style Response fill:#c7d2fe,stroke:#818cf8,stroke-width:2px,color:#333
 ```
 
 ---
@@ -143,20 +172,20 @@ flowchart LR
     Store -->|carrega| Query
     Result -->|passa pro| LLM["⚡ Gemini<br/>(sintetiza<br/>resposta)"]
     
-    style Build fill:#f5f9fc
-    style Repo fill:#f0f8fc
-    style Chunk fill:#e8f4f8
-    style Embed fill:#e0f0f6
-    style Index fill:#d8ecf4
-    style Store fill:#d0e8f2
-    style Query fill:#f5f9fc
-    style Input fill:#f0f8fc
-    style Semantic fill:#e0f0f6
-    style Keyword fill:#e0f0f6
-    style Fusion fill:#d8ecf4
-    style Rerank fill:#d0e8f2
-    style Result fill:#c8e4f0
-    style LLM fill:#e8f4f8
+    style Build fill:#d1fae5,stroke:#a7f3d0,stroke-width:2px,color:#333
+    style Repo fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
+    style Chunk fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
+    style Embed fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
+    style Index fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
+    style Store fill:#ddd6fe,stroke:#a78bfa,stroke-width:2px,color:#333
+    style Query fill:#d1fae5,stroke:#a7f3d0,stroke-width:2px,color:#333
+    style Input fill:#cffafe,stroke:#a5f3fc,stroke-width:1.5px,color:#333
+    style Semantic fill:#fef3c7,stroke:#fde68a,stroke-width:1.5px,color:#333
+    style Keyword fill:#fef3c7,stroke:#fde68a,stroke-width:1.5px,color:#333
+    style Fusion fill:#fce7f3,stroke:#fbcfe8,stroke-width:1.5px,color:#333
+    style Rerank fill:#fce7f3,stroke:#fbcfe8,stroke-width:1.5px,color:#333
+    style Result fill:#c7d2fe,stroke:#818cf8,stroke-width:1.5px,color:#333
+    style LLM fill:#fef3c7,stroke:#fde68a,stroke-width:2px,color:#333
 ```
 
 ---
@@ -312,7 +341,9 @@ Query de Entrada (main.py)
     Output do Usuário
 ```
 
-## Setup
+## Configuração
+
+### Setup Detalhado
 
 ```bash
 # 1. Clonar repositório
@@ -341,16 +372,6 @@ python scripts/build_rag_index.py
 
 # 6. Iniciar agente
 python main.py
-```
-
-### Verificação de Setup
-
-Após iniciar, o agente deve estar pronto para receber consultas. Exemplos de primeira entrada:
-
-```
-"Qual a arquitetura do projeto?"
-"Identifique as tecnologias usadas"
-"Analisa https://github.com/dbt-labs/jaffle_shop"
 ```
 
 ### Gerenciamento de Dependências
@@ -693,6 +714,21 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
+
+---
+
+---
+
+## Learn More
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [AGENTS.md](AGENTS.md) | Contexto e persona do agente — quando usar cada ferramenta |
+| [TOOLS.md](TOOLS.md) | Referência completa das 17 ferramentas com parâmetros e exemplos |
+| [SKILL.md](skills/lupus/SKILL.md) | Definição de persona, tom, limites e regras de comportamento |
+| [MAINTENANCE.md](MAINTENANCE.md) | Guia para contributors — trocar LLM, modificar comportamento |
+| [api/README.md](api/README.md) | Como rodar a REST API (FastAPI + Swagger) |
+| [tests/README.md](tests/README.md) | Suite de testes (pytest) e como adicionar novos |
 
 ---
 

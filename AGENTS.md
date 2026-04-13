@@ -21,37 +21,90 @@ Qualquer outro repositório pode ser analisado configurando `PROJECT_PATH=/path/
 **Use sempre as tools para fundamentar respostas — nunca responda sobre o repositório usando apenas este contexto.**
 
 ### Discovery (5) — ponto de entrada para qualquer repositório
-| Tool | Quando usar |
-|---|---|
-| `discover_project` | Primeira tool a chamar para perguntas sobre estrutura, tecnologias ou stack. Detecta dbt, Node.js, Go, Java, Terraform, Kubernetes, Python/frameworks, dados locais |
-| `explore_repository` | Visão completa da árvore de arquivos com tipos anotados, arquivos-chave e alertas de segredos hardcoded |
-| `read_data_file` | Lê arquivos de dados presentes no repositório (CSV, JSON, Parquet, Excel): schema, amostra, estatísticas |
-| `clone_repository` | Clona qualquer repositório GitHub público e atualiza PROJECT_PATH automaticamente. Use quando o usuário quiser analisar um repositório diferente |
-| `analyze_full_repository` | Clona e analisa repositório completo em uma chamada (clone + explore + leitura de arquivos + dependências). Use quando o usuário enviar uma URL |
+
+| Tool | Quando usar | ⚠️ NÃO usar quando |
+|---|---|---|
+| `discover_project` | Primeira tool para perguntas sobre estrutura, tecnologias, stack. Detecta dbt, Node.js, Go, Java, Terraform, Kubernetes, Python, dados | Você já sabe exatamente qual stack é (skip se evidente) |
+| `explore_repository` | Visão completa da árvore de arquivos com tipos anotados, arquivos-chave, alertas de segredos | Repo é muito grande (>10K arquivos) — use `discover_project` + perguntas específicas |
+| `read_data_file` | Lê arquivos de dados do repositório (CSV, JSON, Parquet, Excel) | Os dados estão em sistema externo (BD, S3) — não estão no repo |
+| `clone_repository` | Clonar e depois chamar outras tools manualmente | ✅ Preferir sempre `analyze_full_repository` para análise completa |
+| `analyze_full_repository` | ✅ **SEMPRE que usuário enviar URL GitHub** — clona + explora + análise | Repo é privado ou inacessível; usuário só quer clonar (use `clone_repository`) |
 
 ### Domain tools (7) — leem arquivos reais do repositório
-| Tool | Quando usar |
-|---|---|
-| `get_project_architecture` | Arquitetura completa: lê dbt_project.yml + databricks.yml + notebooks .ipynb |
-| `analyze_dbt_model` | Detalhes de modelo dbt: SQL, dependências, testes, materialização |
-| `map_data_lineage` | Linhagem: origem dos dados → Bronze → Silver → Gold |
-| `get_agent_tools_spec` | Especificação do AI Agent: LLM, tools, guardrails, quality gate |
-| `analyze_pipeline_config` | Pipeline Databricks Asset Bundles: jobs, schedule, targets |
-| `get_data_dictionary` | Dicionário de dados: colunas, tipos, descrições por camada |
-| `map_code_dependencies` | Grafo de imports entre arquivos Python/JS/TS/Go: deps internas, libs externas mais usadas, entry points |
+
+| Tool | Quando usar | ⚠️ NÃO usar quando |
+|---|---|---|
+| `get_project_architecture` | Arquitetura completa: camadas, módulos, fluxo | Projeto não tem arquitetura clara (scripts aleatórios) |
+| `analyze_dbt_model` | Detalhes de modelo dbt: SQL, deps, testes | Projeto não usa dbt (verificar com `discover_project` primeiro) |
+| `map_data_lineage` | Fluxo: origem → Bronze → Silver → Gold | Não é projeto de dados; dados estão em cloud, não no repo |
+| `analyze_pipeline_config` | Jobs, schedule, orquestração | Não há pipeline (scripts ad-hoc, notebooks soltos) |
+| `get_data_dictionary` | Schema, colunas, tipos, descrições | Dados estão só em sistema externo (não no repo) |
+| `map_code_dependencies` | Grafo de imports, módulos centrais | Projeto é muito pequeno (2-3 arquivos) |
+| `get_agent_tools_spec` | LLM config, tools, guardrails | Não há AI agents no projeto |
 
 ### Sub-agents (4) — análises profundas com LLM interno
-| Tool | Quando usar |
-|---|---|
-| `analyze_code` | Ler e analisar qualquer arquivo do repositório |
-| `generate_documentation` | Gerar documentação técnica em Markdown sobre um tópico |
-| `review_architecture` | Decisões de design, trade-offs, "por que X ao invés de Y" |
-| `suggest_improvements` | Análise crítica com sugestões priorizadas por categoria (arquitetura, testes, segurança, etc.) |
+
+| Tool | Quando usar | ⚠️ NÃO usar quando |
+|---|---|---|
+| `analyze_code` | Ler + explicar arquivo específico | Arquivo é muito grande (>3000 linhas) — split em partes |
+| `generate_documentation` | Gerar Markdown/ABNT automático | Documentação já existe e é recente |
+| `review_architecture` | Análise crítica: "por que X?", trade-offs | Projeto é trivial (scripts simples sem design decisions) |
+| `suggest_improvements` | Sugestões priorizadas (arquitetura, testes, segurança) | Projeto ainda está em early stage (aguarde mais conteúdo) |
 
 ### RAG (1) — busca semântica no código indexado
-| Tool | Quando usar |
-|---|---|
-| `search_codebase` | Encontrar implementações específicas sem saber o arquivo exato |
+
+| Tool | Quando usar | ⚠️ NÃO usar quando |
+|---|---|---|
+| `search_codebase` | Encontrar implementação sem saber arquivo exato | Índice está desatualizado; rode `python scripts/build_rag_index.py` primeiro |
+
+---
+
+## 🔄 Exemplos de Fluxo Completo
+
+### Exemplo 1: Novo repositório — análise completa
+
+```
+Usuário: "Analisa https://github.com/dbt-labs/jaffle_shop"
+
+Agent:
+  1. analyze_full_repository(url) ← clona + explora + lê
+  2. discover_project() ← confirma stack
+  3. get_project_architecture() ← descreve camadas
+  
+Resultado: "Projeto dbt com Medallion Architecture: Bronze (raw) → Silver (cleaned) → Gold (ready). 
+Usa 14 modelos, 20 testes. Orquestração com dbt Cloud."
+```
+
+### Exemplo 2: Entender implementação específica
+
+```
+Usuário: "Como é criado o campo obito_flag?"
+
+Agent:
+  1. search_codebase(query="obito_flag") ← busca semântica
+  2. analyze_code(file_path, question) ← explica arquivo encontrado
+  
+Resultado: "O campo é criado no Silver através de lógica condicional. 
+Lê arquivo models/silver/obito_flag.sql com SQL + explicação"
+```
+
+### Exemplo 3: Sugestões de melhoria
+
+```
+Usuário: "Quais melhorias você sugere?"
+
+Agent:
+  1. discover_project() ← detecta stack
+  2. explore_repository() ← vê estrutura
+  3. suggest_improvements(focus=None) ← análise com contexto
+  
+Resultado: "3 sugestões:
+  • Alta: Adicionar 5 testes faltando em Silver
+  • Média: Consolidar 2 modelos redundantes em Bronze
+  • Baixa: Documentar 3 DAB schedules"
+```
+
+---
 
 ## Regras críticas de uso de tools
 
