@@ -328,6 +328,16 @@ lupus/
 │   │   ├── retriever.py           # Busca híbrida + reranking com CrossEncoder
 │   │   └── index/                 # Índices gerados (gitignored)
 │
+├── API REST (FastAPI)
+│   ├── api/
+│   │   ├── main.py                # Servidor FastAPI + uvicorn
+│   │   ├── dependencies.py        # Injeção de dependência (agente, LLM)
+│   │   ├── middleware.py          # Logging e tracing middleware
+│   │   ├── routers/               # Endpoints (/chat, /tools, /eval/run, /health)
+│   │   ├── schemas/               # Modelos Pydantic (request/response)
+│   │   ├── services/              # Lógica de negócio (agent_service, eval_service)
+│   │   └── README.md              # Documentação da API
+│
 ├── Testes e Avaliação
 │   ├── tests/                     # Testes de integração
 │   ├── evaluation/
