@@ -31,4 +31,11 @@ srag_agent/
 backlog.md
 
 # Notebooks — uso pessoal/estudo, não versionado
-notebooks/
+notebooks/
+
+# Contexto do projeto — gerado para uso com LLMs, não versionado
+contexto/
+
+# LupusAPI — artefatos de execução (gerados em runtime, não são código)
+evaluation/results.json          # output do run_evaluation.py
+evaluation/datasets/results.json # idem, se gerado nessa pasta

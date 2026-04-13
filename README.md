@@ -487,6 +487,88 @@ Os resultados são escritos em `evaluation/results.json`.
 
 ---
 
+---
+
+## LupusAPI — Camada HTTP
+
+O Lupus também expõe o agente via REST API, construída com FastAPI. A interface HTTP mantém o mesmo núcleo do agente — `config.py`, tools, RAG — sem modificações, adicionando uma camada de transporte e observabilidade.
+
+### Como rodar
+
+```bash
+# Instale as dependências da API (apenas uma vez)
+pip install fastapi uvicorn[standard]
+
+# Suba o servidor (da raiz do projeto)
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Aguarde a mensagem `Application startup complete.` O startup leva ~5–10s (carrega o agente).
+
+Documentação interativa disponível em `http://localhost:8000/docs` (Swagger UI).
+
+### Endpoints
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `POST` | `/chat` | Envia mensagem ao agente; suporta `session_id` para histórico multi-turn |
+| `GET` | `/tools` | Lista todas as 17 tools disponíveis com nome e descrição |
+| `POST` | `/eval/run` | Executa avaliações automáticas via LangSmith SDK; retorna scores por evaluator |
+| `GET` | `/health` | Status do servidor — `agent` e `langsmith` separados; retorna 503 se agente falhou |
+
+### Exemplo rápido
+
+```bash
+# Conversar com o agente via HTTP
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Qual a arquitetura do projeto?", "session_id": "sessao-1"}'
+
+# Verificar saúde do sistema
+curl http://localhost:8000/health
+
+# Avaliação rápida com 3 exemplos
+curl -X POST http://localhost:8000/eval/run \
+  -H "Content-Type: application/json" \
+  -d '{"evaluators": ["all"], "max_examples": 3}'
+```
+
+### Observabilidade
+
+Cada request gera um log com `request_id` único, método, path, status HTTP e latência:
+
+```
+INFO  request_id=a3f2b1c4  method=POST  path=/chat  status=200  latency_ms=4213.50  ip=127.0.0.1
+```
+
+O header `X-Request-ID` é injetado em todas as responses para correlacionar logs com erros.
+
+Com `LANGCHAIN_TRACING_V2=true`, todas as chamadas ao agente aparecem automaticamente no dashboard LangSmith com traces de cada tool call.
+
+### Avaliação via API
+
+O endpoint `/eval/run` usa o LangSmith SDK para criar experimentos rastreáveis:
+
+```
+Dataset (chat_qa.jsonl, 20 exemplos)
+    ↓
+langsmith.evaluate(agente, evaluators=[correctness, tool_usage, latency])
+    ↓
+Experimento histórico em smith.langchain.com
+```
+
+Os evaluators medem: presença de keywords esperadas, cobertura de tools corretas, e latência convertida em score (0–1).
+
+### ⚠️ Contexto e limitações
+
+O Lupus é um **projeto de aprendizado**. A LupusAPI foi construída para explorar FastAPI, injeção de dependência assíncrona, e integração com o SDK do LangSmith — não para ser um produto em produção.
+
+A API não tem autenticação. Isso é intencional para manter o escopo focado no que o projeto se propõe a ensinar. Qualquer pessoa com acesso à rede pode chamar os endpoints — o que é aceitável num ambiente local de desenvolvimento, mas não num contexto público ou de cliente real.
+
+Documentação completa do módulo: [`api/README.md`](api/README.md).
+
+---
+
 ## Motivação e Abordagem
 
 Análise de repositórios em escala apresenta desafios:
@@ -516,6 +598,10 @@ Lupus aborda esses desafios através de:
 | 6 | Avaliação quantitativa (25 perguntas, LLM como juiz) |
 | 7 | Polish (README, requirements, organização) |
 | 8 | Pipeline RAG (FAISS + BM25 + RRF + CrossEncoder) |
+| 9 | LupusAPI Fase 1 — FastAPI, Swagger, endpoints mock, schemas Pydantic |
+| 10 | LupusAPI Fase 2 — Integração agente real, session_id, tratamento de erros |
+| 11 | LupusAPI Fase 3 — LangSmith evals dataset + evaluators + POST /eval/run |
+| 12 | LupusAPI Fase 4 — Logging middleware, GET /health, .env.example, README |
 
 ---
 
