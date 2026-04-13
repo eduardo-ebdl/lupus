@@ -249,22 +249,23 @@ def _run_with_streaming(agent, user_input: str, config: dict, turn: int = 0) -> 
                 displayed = "[red]❌ Sem resposta[/red] — agente não retornou dados.\nTente novamente com uma pergunta diferente."
                 live.update(_make_panel(displayed))
 
-            # Extrai ferramenta usadas do histórico de mensagens
-            messages = result.get("messages", [])
-            for msg in messages:
-                if hasattr(msg, "tool_calls") and msg.tool_calls:
-                    for tc in msg.tool_calls:
-                        name = tc.get("name", "") if isinstance(tc, dict) else getattr(tc, "name", "")
-                        if name and name not in tool_calls_made:
-                            tool_calls_made.append(name)
+            # Extrai ferramentas usadas e última resposta AI (só se não houve timeout/erro)
+            if result is not None:
+                messages = result.get("messages", [])
+                for msg in messages:
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
+                        for tc in msg.tool_calls:
+                            name = tc.get("name", "") if isinstance(tc, dict) else getattr(tc, "name", "")
+                            if name and name not in tool_calls_made:
+                                tool_calls_made.append(name)
 
-            # Extrai última resposta AI
-            for msg in reversed(messages):
-                if getattr(msg, "type", "") == "ai":
-                    content = getattr(msg, "content", "")
-                    if isinstance(content, str):
-                        displayed = content
-                    break
+                # Extrai última resposta AI
+                for msg in reversed(messages):
+                    if getattr(msg, "type", "") == "ai":
+                        content = getattr(msg, "content", "")
+                        if isinstance(content, str):
+                            displayed = content
+                        break
 
             live.update(_make_panel(displayed))
 
@@ -408,7 +409,7 @@ def chat():
         console.print()
         turn_counter += 1
 
-        # Usa agente em todos os casos — o system prompt em config.py já instruye
+        # Usa agente em todos os casos — o system prompt em config.py já instrui
         # quando usar tools (com repositório) vs conversação (sem repositório).
         # Uma única superfície de manutenção: agent.invoke() sempre, agente decide.
         response, tool_calls = _run_with_streaming(agent, user_input, config, turn=turn_counter)

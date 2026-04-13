@@ -1,8 +1,8 @@
 """Sub-agents implementados como tools com LLM call interno.
 
-Workaround para SubAgentMiddleware incompatível com Gemini.
 Cada sub-agent é uma @tool que recebe parâmetros, monta um prompt
-especializado, chama o Gemini e retorna o resultado.
+especializado, chama o LLM configurado e retorna o resultado.
+O provider é determinado por LLM_PROVIDER no .env (Gemini, Claude, OpenAI).
 """
 
 import json
@@ -12,7 +12,7 @@ import re
 import unicodedata
 
 from langchain.tools import tool
-from langchain_google_genai import ChatGoogleGenerativeAI
+from llm_provider import build_llm
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +33,6 @@ def _get_project_root() -> str:
     """Retorna o root do projeto via ctx_manager (fonte centralizada)."""
     from core.context_manager import get_project_path
     return get_project_path()
-
-
-def _get_llm() -> ChatGoogleGenerativeAI:
-    """Retorna instância do Gemini para os sub-agents."""
-    return ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 
 def _get_domain_tools():
@@ -93,12 +88,12 @@ def _validate_input(value: str, field_name: str, max_length: int = 500, allow_em
 
 
 def _invoke_with_retry(messages: list[dict], max_retries: int = 2) -> str:
-    """Chama o Gemini com retry automático para respostas vazias.
+    """Chama o LLM com retry automático para respostas vazias.
 
-    O Gemini ocasionalmente retorna 0 output tokens (resposta vazia)
+    Alguns providers ocasionalmente retornam 0 output tokens (resposta vazia)
     quando o contexto é grande. Um retry simples resolve ~100% dos casos.
     """
-    llm = _get_llm()
+    llm = build_llm()
     for attempt in range(1, max_retries + 1):
         try:
             response = llm.invoke(messages)

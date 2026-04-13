@@ -311,7 +311,6 @@ lupus/
 │       └── generate_docs.py       # Gerador de documentação
 │
 ├── Documentação
-│   ├── docs/                      # Documentação de desenvolvimento
 │   ├── README.md
 │   └── AGENTS.md                  # Contexto e diretrizes do agente
 ```
@@ -503,8 +502,6 @@ python evaluation/run_evaluation.py
 ```
 
 Os resultados são escritos em `evaluation/results.json`.
-
----
 
 ---
 

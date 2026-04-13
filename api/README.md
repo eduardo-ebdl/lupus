@@ -102,20 +102,27 @@ curl -X POST http://localhost:8000/chat \
 
 #### Respostas de Erro
 
-**HTTP 400** — Bad Request (input inválido):
+**HTTP 400** — Bad Request (input inválido, lançado explicitamente pelo código):
 ```json
 {
   "detail": "message field is required"
 }
 ```
 
+**HTTP 422** — Unprocessable Entity (validação Pydantic falhou — campo de tipo errado ou ausente):
+```json
+{
+  "detail": [{"loc": ["body", "message"], "msg": "field required", "type": "value_error.missing"}]
+}
+```
+
 **HTTP 500** — Internal Server Error (agente falhou):
 ```json
 {
-  "detail": "Agent crashed during execution",
-  "request_id": "xyz789"
+  "detail": "Agent crashed during execution"
 }
 ```
+> O `request_id` da requisição está disponível no header `X-Request-ID` da resposta.
 
 **HTTP 503** — Service Unavailable (agente não inicializou):
 ```json

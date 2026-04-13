@@ -50,8 +50,9 @@ all-providers = ["langchain-anthropic>=0.3.0", "langchain-openai>=0.3.0"]
 Homepage = "https://github.com/eduardo-ebdl/lupus"
 Repository = "https://github.com/eduardo-ebdl/lupus"
 
-[tool.setuptools]
-packages = [""]
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*", "scripts*", "generated_docs*"]
 
 [tool.black]
 line-length = 100

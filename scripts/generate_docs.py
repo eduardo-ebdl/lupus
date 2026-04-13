@@ -22,23 +22,23 @@ from tools.subagents import generate_documentation
 DOCS = [
     {
         "filename": "architecture.md",
-        "topic": "Arquitetura geral do projeto SRAG, incluindo Medallion Architecture, módulos, camadas Bronze Silver Gold, pipeline de orquestração e fluxo de dados",
+        "topic": "Arquitetura geral do projeto, incluindo módulos, camadas, padrões adotados, pipeline de orquestração e fluxo de dados",
     },
     {
         "filename": "module_analysis.md",
-        "topic": "Análise dos 3 módulos do projeto SRAG: srag_agent (dbt, modelos Bronze Silver Gold), ai_agent (LLM ReAct agent com tools) e agent_srag_pipeline (orquestração DABs schedule deploy)",
+        "topic": "Análise dos principais módulos e componentes do projeto: responsabilidades, entradas, saídas e interdependências",
     },
     {
         "filename": "design_patterns.md",
-        "topic": "Padrões de design do projeto SRAG: Medallion Architecture, ReAct Agent Pattern, Tool-Use Function-Calling, Infrastructure-as-Code DABs, Data Quality Gates, Grounding via web search, Prompt Guardrails, LGPD Compliance",
+        "topic": "Padrões de design e decisões arquiteturais do projeto: quais padrões foram adotados, por que foram escolhidos e quais trade-offs envolvem",
     },
     {
         "filename": "data_lineage.md",
-        "topic": "Linhagem de dados completa do projeto SRAG: fluxo OpenDataSUS para Bronze, Bronze para Silver com transformações e dicionário de dados, Silver para Gold Daily e Gold Monthly com KPIs e medallion",
+        "topic": "Linhagem de dados completa do projeto: origem dos dados, transformações aplicadas em cada etapa e destino final",
     },
     {
         "filename": "tech_stack.md",
-        "topic": "Stack tecnológico do projeto SRAG: Databricks, Unity Catalog, dbt Core, dbt-databricks, Spark SQL, Delta Lake, liquid clustering, LangChain, LangGraph, Llama 3.3 70B, Tavily API, MLflow, DABs pipeline deploy schedule",
+        "topic": "Stack tecnológico do projeto: linguagens, frameworks, dependências principais, infraestrutura e ferramentas de observabilidade",
     },
 ]
 

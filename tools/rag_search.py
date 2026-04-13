@@ -91,7 +91,7 @@ def search_codebase(query: str, layer: str = "") -> str:
     de código mais relevantes à pergunta, mesmo sem saber o arquivo exato.
 
     Fallback automático: Se o índice foi construído para outro repositório,
-    retorna aviso e usa analyze_code/grep_codebase como fallback.
+    retorna aviso e usa analyze_code como fallback.
 
     Use quando:
     - O usuário perguntar sobre implementação sem mencionar um arquivo específico

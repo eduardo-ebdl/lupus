@@ -1,9 +1,9 @@
-"""Bloco 6: Avaliação quantitativa do agent com 20 perguntas.
+"""Bloco 6: Avaliação quantitativa do agent com 25 perguntas.
 
 Métricas:
 - Accuracy (keywords encontradas na resposta)
 - Tool coverage (tools esperadas foram chamadas)
-- Completude + Relevância (LLM-as-judge via Gemini)
+- Completude + Relevância (LLM-as-judge via provider configurado em LLM_PROVIDER)
 """
 
 import json
@@ -22,7 +22,7 @@ os.chdir(PROJECT_ROOT)
 DATASET_PATH = os.path.join(EVAL_DIR, "dataset.json")
 RESULTS_PATH = os.path.join(EVAL_DIR, "results.json")
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from llm_provider import build_llm
 
 from config import make_agent
 
@@ -102,8 +102,8 @@ def _check_tools(called: list[str], expected: list[str]) -> dict:
 
 
 def _judge_response(question: str, keywords: list[str], response: str) -> dict:
-    """Usa Gemini como juiz para avaliar completude, relevância e fundamentação."""
-    judge_llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+    """Usa o LLM configurado como juiz para avaliar completude, relevância e fundamentação."""
+    judge_llm = build_llm()
     kw_labels = [kw[0] if isinstance(kw, list) else kw for kw in keywords]
     prompt = JUDGE_PROMPT.format(
         question=question,

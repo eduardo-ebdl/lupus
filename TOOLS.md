@@ -399,7 +399,6 @@ Ferramentas que sintetizam análises através de invocação interna do LLM.
 
 **Parâmetros:**
 - `query` (str): Termo de busca ou pergunta (ex: `como normalizar datas?`)
-- `k` (int, padrão: 5): Número de resultados a retornar
 - `layer` (str, opcional): Filtrar por camada (bronze, silver, gold)
 
 **Pipeline de busca:**
@@ -495,7 +494,7 @@ Resultado: Implementação encontrada + explicação
 
 ### Limites e Performance
 - **Repository size**: Análises suportam repos de até ~50MB
-- **File reading**: Máximo 1500 caracteres por arquivo (evita streaming infinito)
+- **File reading**: Máximo 2500 caracteres por arquivo (evita streaming infinito)
 - **Search results**: Máximo 5 resultados por padrão (evita sobrecarga)
 - **Timeout**: Agente tem limite de 3 minutos por resposta
 
