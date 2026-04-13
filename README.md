@@ -732,7 +732,7 @@ pip install -r requirements.txt
 Projeto acadêmico para fins educacionais e de pesquisa.
 
 **Tecnologias:**
-- Gemini 2.5 Flash (LLM)
-- DeepAgents / LangChain / LangGraph (framework de agentes)
-- FAISS + BM25 (busca semântica local)
-- LangSmith (observabilidade opcional)
+- **LLM:** Flexível — Gemini 2.5 Flash (padrão), Claude, OpenAI, ou compatível OpenAI via `LLM_PROVIDER`
+- **Framework de agentes:** DeepAgents + LangChain + LangGraph
+- **RAG:** FAISS (busca semântica) + BM25 (busca keyword) + CrossEncoder (reranking)
+- **Observabilidade:** LangSmith (opcional, via `LANGCHAIN_TRACING_V2`)
