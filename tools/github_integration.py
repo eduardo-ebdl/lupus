@@ -65,6 +65,19 @@ def clone_repository(url: str, branch: str = "") -> str:
              (ex: 'https://github.com/dbt-labs/jaffle_shop').
         branch: Branch específica para clonar. Se vazio, usa o branch padrão.
     """
+    try:
+        return _clone_repository_impl(url, branch)
+    except Exception as e:
+        logger.exception(f"Unexpected error in clone_repository: {e}")
+        return json.dumps({
+            "error": f"Erro inesperado ao clonar repositório: {str(e)}",
+            "url": url,
+            "hint": "Verifique o log de erros e tente novamente.",
+        }, ensure_ascii=False, indent=2)
+
+
+def _clone_repository_impl(url: str, branch: str = "") -> str:
+    """Implementação interna de clone_repository com tratamento de erros."""
     url = url.strip()
     if not url:
         return json.dumps({"error": "URL do repositório não informada."}, ensure_ascii=False)
@@ -155,21 +168,33 @@ def clone_repository(url: str, branch: str = "") -> str:
         }, ensure_ascii=False, indent=2)
 
     # Atualiza o repo ativo — dispara hooks (cache, RAG, middleware)
+    absolute_dest = os.path.abspath(dest_dir)
+    logger.info(f"Clone successful. Setting repo path to: {absolute_dest}")
     ctx_manager.set_repo(dest_dir)
 
     # Importa aqui para evitar circular import no módulo
     from tools.project_discovery import discover_project
     summary = discover_project.invoke({})
 
-    return json.dumps({
+    try:
+        discovery_data = json.loads(summary)
+    except json.JSONDecodeError:
+        discovery_data = {}
+
+    response = {
         "status": "ok",
         "repository": repo_name,
         "url": url,
         "cloned_to": dest_dir,
+        "absolute_path": os.path.abspath(dest_dir),
         "project_path_updated": dest_dir,
         "message": (
-            f"Repositório '{repo_name}' clonado com sucesso. "
-            "PROJECT_PATH atualizado. Todas as domain tools agora analisam este repositório."
+            f"✅ Repositório '{repo_name}' clonado com sucesso.\n"
+            f"📁 Localização: {os.path.abspath(dest_dir)}\n"
+            f"🔄 PROJECT_PATH atualizado. Todas as domain tools agora analisam este repositório."
         ),
-        "discovery": json.loads(summary),
-    }, ensure_ascii=False, indent=2)
+        "discovery": discovery_data,
+    }
+
+    logger.info(f"Repository cloned successfully to: {os.path.abspath(dest_dir)}")
+    return json.dumps(response, ensure_ascii=False, indent=2)

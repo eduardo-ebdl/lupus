@@ -92,6 +92,53 @@ def _export_conversation(agent, thread_id: str) -> str:
     return filename
 
 
+def _format_generated_doc_response(response: str) -> str | None:
+    """Detecta e formata respostas de generate_documentation com paths claros.
+
+    Se a resposta for JSON de geração de doc, retorna formatação visual com paths.
+    Caso contrário, retorna None para deixar o handler padrão processar.
+    """
+    try:
+        # Tenta parsear como JSON
+        if not response.strip().startswith("{"):
+            return None
+
+        data = json.loads(response)
+
+        # Verifica se é resposta de geração de documentação
+        if data.get("status") not in ("ok", "error") or "saved_to" not in data:
+            return None
+
+        # Formata resposta sucesso
+        if data.get("status") == "ok":
+            paths = data.get("absolute_paths", [])
+            filename = data.get("filename", "documento")
+            content_preview = data.get("content", "")[:200] + "..." if data.get("content") else ""
+
+            msg = (
+                f"[green]✅ Documentação gerada com sucesso[/green]\n\n"
+                f"[bold]Arquivo:[/bold] {filename}\n"
+                f"[bold]Estilo:[/bold] {data.get('style', 'técnico')}\n\n"
+                f"[bold]Localização(ões):[/bold]\n"
+            )
+            for path in paths:
+                msg += f"  📁 [cyan]{path}[/cyan]\n"
+
+            msg += f"\n[dim]Preview:[/dim]\n{content_preview}"
+            return msg
+
+        # Formata resposta erro
+        else:
+            return (
+                f"[red]❌ Erro ao gerar documentação[/red]\n\n"
+                f"[bold]Problema:[/bold] {data.get('error', 'desconhecido')}\n"
+                f"[bold]Arquivo tentado:[/bold] {data.get('filename', 'N/A')}\n"
+                f"[dim]Diretórios tentados: {', '.join(data.get('attempted_dirs', []))}[/dim]"
+            )
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return None
+
+
 def _print_banner(repo_name: str):
     """Exibe banner de boas-vindas com instruções de uso."""
     console.print()
@@ -374,15 +421,48 @@ def chat():
                 console.print(f"\n[dim]Repositório ativo: [cyan]{ctx_manager.path}[/cyan][/dim]\n")
             else:
                 url = parts[1].strip()
-                console.print(f"\n[dim]Clonando {url}...[/dim]")
+                console.print(f"\n[dim]Clonando {url}...[/dim]\n")
                 from tools.github_integration import clone_repository
-                result_json = clone_repository.invoke({"url": url, "branch": ""})
-                result = json.loads(result_json)
-                if "error" in result:
-                    console.print(f"[red]Erro: {result.get('error')}[/red]\n")
-                else:
-                    console.print(f"[green]✓ Repositório '{result.get('repository')}' clonado![/green]")
-                    console.print(f"[dim]Path: {result.get('cloned_to')}[/dim]\n")
+                try:
+                    result_json = clone_repository.invoke({"url": url, "branch": ""})
+                    result = json.loads(result_json)
+
+                    if "error" in result:
+                        console.print(Panel(
+                            f"[red]❌ Erro ao clonar[/red]\n\n{result.get('error')}",
+                            title="[bold red]Clone Falhou[/bold red]",
+                            border_style="red",
+                            padding=(1, 2),
+                        ))
+                    else:
+                        repo_name = result.get('repository', 'repositório')
+                        cloned_path = result.get('absolute_path') or result.get('cloned_to')
+                        message = result.get('message', '')
+
+                        console.print(Panel(
+                            f"[green]✅ {repo_name} clonado com sucesso[/green]\n\n"
+                            f"[bold]Localização do arquivo:[/bold]\n"
+                            f"[cyan]{cloned_path}[/cyan]\n\n"
+                            f"[dim]{message if message else 'PROJECT_PATH atualizado. Pronto para análise.'}[/dim]",
+                            title="[bold green]Clone Concluído[/bold green]",
+                            border_style="green",
+                            padding=(1, 2),
+                        ))
+                except json.JSONDecodeError as e:
+                    console.print(Panel(
+                        f"[red]❌ Erro ao processar resposta do clone[/red]\n\n{str(e)}",
+                        title="[bold red]Erro Interno[/bold red]",
+                        border_style="red",
+                        padding=(1, 2),
+                    ))
+                except Exception as e:
+                    console.print(Panel(
+                        f"[red]❌ Erro inesperado:[/red]\n{str(e)}",
+                        title="[bold red]Erro[/bold red]",
+                        border_style="red",
+                        padding=(1, 2),
+                    ))
+            console.print()
             continue
 
         if cmd == "/status":
@@ -413,6 +493,18 @@ def chat():
         # quando usar tools (com repositório) vs conversação (sem repositório).
         # Uma única superfície de manutenção: agent.invoke() sempre, agente decide.
         response, tool_calls = _run_with_streaming(agent, user_input, config, turn=turn_counter)
+
+        # Pós-processamento de respostas estruturadas (generate_documentation, etc.)
+        formatted_doc_response = _format_generated_doc_response(response)
+        if formatted_doc_response:
+            console.print(Panel(
+                formatted_doc_response,
+                border_style="green",
+                title="[bold green]Documentação Gerada[/bold green]",
+                padding=(1, 2),
+            ))
+            # Se era JSON de geração, não mostra a resposta crua novamente
+            response = ""
 
         # Detecta warnings de RAG desatualizado na resposta (mesmo se oculto em JSON)
         try:

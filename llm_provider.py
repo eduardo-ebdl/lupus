@@ -11,7 +11,7 @@ Variáveis de ambiente:
 
 Defaults por provider:
     gemini        → gemini-2.5-flash   (requer GOOGLE_API_KEY)
-    claude        → claude-3-5-haiku-20241022  (requer ANTHROPIC_API_KEY)
+    claude        → claude-haiku-4-5-20251001  (requer ANTHROPIC_API_KEY)
     openai        → gpt-4o-mini        (requer OPENAI_API_KEY)
     openai_compat → depende do servidor (requer LLM_BASE_URL + OPENAI_API_KEY ou sem key)
 
@@ -23,7 +23,7 @@ Exemplos de uso no .env:
 
     # Claude (provider nativo do deepagents)
     LLM_PROVIDER=claude
-    LLM_MODEL=claude-3-5-haiku-20241022
+    LLM_MODEL=claude-haiku-4-5-20251001
     ANTHROPIC_API_KEY=...
 
     # OpenAI
@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 # Modelos padrão por provider
 _DEFAULTS = {
     "gemini": "gemini-2.5-flash",
-    "claude": "claude-3-5-haiku-20241022",
+    "claude": "claude-haiku-4-5-20251001",
     "openai": "gpt-4o-mini",
     "openai_compat": "llama3.2",
 }

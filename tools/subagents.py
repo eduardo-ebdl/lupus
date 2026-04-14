@@ -421,7 +421,7 @@ def generate_documentation(topic: str, output_filename: str = "", style: str = "
     if ext.lower() not in allowed_extensions:
         filename += default_ext
 
-    saved_paths = []
+    saved_paths = []  # List of (absolute_path, relative_label) tuples
 
     def _safe_write(directory: str, fname: str, content: str) -> str | None:
         """Salva arquivo sem sobrescrever — adiciona sufixo _N se já existir."""
@@ -435,24 +435,49 @@ def generate_documentation(topic: str, output_filename: str = "", style: str = "
         try:
             with open(candidate, "w", encoding="utf-8") as f:
                 f.write(content)
-            return candidate
-        except OSError:
+            # Valida se arquivo foi realmente criado
+            if os.path.exists(candidate) and os.path.getsize(candidate) > 0:
+                return os.path.abspath(candidate)
+            return None
+        except OSError as e:
+            logger.error(f"Erro ao salvar arquivo {candidate}: {e}")
             return None
 
     # Salva em generated_docs/ (Lupus)
     docs_dir = os.path.join(_LUPUS_ROOT, "generated_docs")
     docs_path = _safe_write(docs_dir, filename, content)
     if docs_path:
-        saved_paths.append(os.path.relpath(docs_path, _LUPUS_ROOT).replace("\\", "/"))
+        saved_paths.append(docs_path)
 
     # Salva também no repositório analisado
     if os.path.isdir(project_root) and project_root != _LUPUS_ROOT:
         repo_path = _safe_write(project_root, filename, content)
         if repo_path:
-            saved_paths.append(repo_path.replace("\\", "/"))
+            saved_paths.append(repo_path)
 
-    save_info = f"\n\n[Documento salvo em: {', '.join(saved_paths)}]" if saved_paths else ""
-    return content + save_info
+    # Retorna JSON estruturado com metadata + conteúdo
+    if saved_paths:
+        for path in saved_paths:
+            logger.info(f"Documentation saved to: {path}")
+        return json.dumps({
+            "status": "ok",
+            "message": f"✅ Documentação gerada e salva com sucesso",
+            "filename": filename,
+            "saved_to": saved_paths,
+            "absolute_paths": saved_paths,  # Path absoluto para clareza
+            "content": content,
+            "style": style_lower,
+            "topic": topic,
+        }, ensure_ascii=False, indent=2)
+    else:
+        logger.error(f"Failed to save documentation file {filename}")
+        return json.dumps({
+            "status": "error",
+            "message": "❌ Falha ao salvar arquivo de documentação",
+            "filename": filename,
+            "error": "Não foi possível escrever em nenhum diretório disponível",
+            "attempted_dirs": [docs_dir, project_root],
+        }, ensure_ascii=False, indent=2)
 
 
 # ============================================================

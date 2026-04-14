@@ -28,7 +28,7 @@ O Lupus usa uma camada de abstração em `llm_provider.py` — basta configurar 
 | `LLM_PROVIDER` | Modelo padrão | API Key necessária |
 |----------------|--------------|-------------------|
 | `gemini` (padrão) | `gemini-2.5-flash` | `GOOGLE_API_KEY` |
-| `claude` | `claude-3-5-haiku-20241022` | `ANTHROPIC_API_KEY` |
+| `claude` | `claude-haiku-4-5-20251001` | `ANTHROPIC_API_KEY` |
 | `openai` | `gpt-4o-mini` | `OPENAI_API_KEY` |
 | `openai_compat` | depende do servidor | `LLM_BASE_URL` (obrigatório) |
 
@@ -47,7 +47,7 @@ pip install langchain-openai
 ```bash
 # Para Claude (provider nativo do deepagents)
 LLM_PROVIDER=claude
-LLM_MODEL=claude-3-5-haiku-20241022
+LLM_MODEL=claude-haiku-4-5-20251001
 ANTHROPIC_API_KEY=sua-chave-aqui
 
 # Para Ollama local (sem custo)
