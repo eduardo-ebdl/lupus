@@ -6,7 +6,7 @@ O agente consulta os arquivos reais do projeto através de 17 ferramentas. Todas
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ```bash
 # Setup (2 min)
@@ -27,7 +27,7 @@ Teste com: `"Qual a arquitetura do projeto?"` ou `"Analisa https://github.com/db
 
 ---
 
-## 📖 Índice
+## Índice
 
 - [Capacidades](#capacidades) — 17 ferramentas para análise de repositórios
 - [Arquitetura](#arquitetura) — Como funciona internamente
@@ -262,7 +262,7 @@ Exemplo: Se editar o tom de "profissional" para "casual", a próxima resposta re
 - **Auto-documentação**: O agente gera documentação descrevendo o repositório analisado.
 - **Persona configurável**: Comportamento do agente é definido em arquivo editável com hot reload.
 
-### ⚠️ Dependência Alpha: DeepAgents 0.5.0a2
+### Dependência Alpha: DeepAgents 0.5.0a2
 
 O Lupus usa **DeepAgents 0.5.0a2** em operação estável. Essa versão alpha foi escolhida como dependência fixa porque oferece recursos avançados de middleware e memória de conversa que não estão disponíveis em versões estáveis anteriores.
 
@@ -715,7 +715,7 @@ Experimento histórico em smith.langchain.com
 
 Os evaluators medem: presença de keywords esperadas, cobertura de tools corretas, e latência convertida em score (0–1).
 
-### ⚠️ Contexto e limitações
+### Contexto e limitações
 
 O Lupus é um **projeto de aprendizado**. A LupusAPI foi construída para explorar FastAPI, injeção de dependência assíncrona, e integração com o SDK do LangSmith — não para ser um produto em produção.
 
