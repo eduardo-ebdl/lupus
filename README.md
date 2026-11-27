@@ -1,6 +1,6 @@
 # Lupus — AI Code Intelligence Agent
 
-**Projeto pessoal de estudos** em AI Engineering. Lupus é um agente conversacional para análise de repositórios — experimenta integração de LangGraph, ferramentas especializadas, busca semântica local e avaliação com LLM como juiz. 
+Agente conversacional em LangGraph para análise de repositórios. Explica arquitetura, dependências e linhagem de dados, revisa decisões e sugere melhorias, usando ferramentas especializadas, busca semântica local e avaliação com LLM como juiz.
 
 O agente consulta os arquivos reais do projeto através de 17 ferramentas. Todas as respostas são fundamentadas no código-fonte analisado, sem extrapolações baseadas em conhecimento geral.
 
@@ -10,7 +10,7 @@ O agente consulta os arquivos reais do projeto através de 17 ferramentas. Todas
 
 ```bash
 # Setup (2 min)
-git clone https://github.com/seu-usuario/lupus.git && cd lupus
+git clone https://github.com/eduardo-ebdl/lupus.git && cd lupus
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
@@ -382,7 +382,7 @@ Query de Entrada (main.py)
 
 ```bash
 # 1. Clonar repositório
-git clone https://github.com/seu-usuario/lupus.git
+git clone https://github.com/eduardo-ebdl/lupus.git
 cd lupus
 
 # 2. Criar ambiente virtual
